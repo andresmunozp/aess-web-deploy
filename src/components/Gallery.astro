@@ -1,5 +1,7 @@
 ---
+import { Image } from "astro:assets";
 import { galleryPhotos } from "@/Data/gallery";
+import MobileGallery from "@/components/MobileGallery.astro";
 
 const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.category))];
 const normalizeIndex = (index: number) => {
@@ -10,21 +12,25 @@ const normalizeIndex = (index: number) => {
   return (index + galleryPhotos.length) % galleryPhotos.length;
 };
 
-const initialSlides = [
-  galleryPhotos[normalizeIndex(-1)],
-  galleryPhotos[normalizeIndex(0)],
-  galleryPhotos[normalizeIndex(1)],
-];
+const initialSlides =
+  galleryPhotos.length === 0
+    ? []
+    : [
+        galleryPhotos[normalizeIndex(-1)],
+        galleryPhotos[normalizeIndex(0)],
+        galleryPhotos[normalizeIndex(1)],
+      ];
 ---
 
 <section class="gallery-section" id="gallery" data-gallery-root>
   <div class="gallery-header">
     <h2>Momentos de Nuestra Organizacion</h2>
-    <div class="gallery-divider" aria-hidden="true"></div>
     <p>
       Explora los sucesos, eventos y recuerdos mas importantes que hemos compartido juntos.
     </p>
   </div>
+
+  <MobileGallery />
 
   <div class="carousel-shell">
     <div class="category-filter" role="tablist" aria-label="Filtrar fotos por categoria">
@@ -65,21 +71,21 @@ const initialSlides = [
               data-current={index === 1 ? "true" : "false"}
               hidden={index !== 1}
             >
-              <img
+              <Image
                 data-slide-image
-                src={photo?.url}
-                alt={photo?.title}
+                src={photo.image}
+                alt={photo.title}
                 loading={index === 1 ? "eager" : "lazy"}
                 fetchpriority={index === 1 ? "high" : "auto"}
-                width="1280"
-                height="720"
+                widths={[640, 960, 1280]}
+                sizes="(max-width: 768px) 100vw, 90vw"
               />
               <div class="main-photo-overlay"></div>
 
               <div class="main-photo-meta">
-                <span class="meta-category" data-slide-category>{photo?.category}</span>
-                <h3 data-slide-title>{photo?.title}</h3>
-                <p data-slide-date>{photo?.date}</p>
+                <span class="meta-category" data-slide-category>{photo.category}</span>
+                <h3 data-slide-title>{photo.title}</h3>
+                <p data-slide-date>{photo.date}</p>
               </div>
             </article>
           ))
@@ -109,7 +115,15 @@ const initialSlides = [
             type="button"
             aria-label={`Abrir foto: ${photo.title}`}
           >
-            <img src={photo.url} alt={photo.title} loading="lazy" width="160" height="90" />
+            <Image
+              src={photo.image}
+              alt={photo.title}
+              loading="lazy"
+              width={320}
+              height={180}
+              fit="cover"
+              sizes="(max-width: 768px) 35vw, 160px"
+            />
           </button>
         ))
       }
@@ -209,21 +223,23 @@ const initialSlides = [
 
       if (image instanceof HTMLImageElement) {
         const currentSrc = image.getAttribute("src");
-        image.dataset.requestedSrc = photo.url;
+        image.dataset.requestedSrc = photo.image.src;
 
-        if (currentSrc !== photo.url) {
+        if (currentSrc !== photo.image.src) {
           image.style.opacity = "0";
 
-          preloadImage(photo.url).then(() => {
-            if (image.dataset.requestedSrc !== photo.url) {
+          preloadImage(photo.image.src).then(() => {
+            if (image.dataset.requestedSrc !== photo.image.src) {
               return;
             }
 
-            image.src = photo.url;
+            image.removeAttribute("srcset");
+            image.removeAttribute("sizes");
+            image.src = photo.image.src;
             image.alt = photo.title;
 
             requestAnimationFrame(() => {
-              if (image.dataset.requestedSrc === photo.url) {
+              if (image.dataset.requestedSrc === photo.image.src) {
                 image.style.opacity = "1";
               }
             });
@@ -261,7 +277,7 @@ const initialSlides = [
           return;
         }
 
-        preloadImage(photo.url);
+        preloadImage(photo.image.src);
       });
     };
 
@@ -487,16 +503,12 @@ const initialSlides = [
   .gallery-section {
     display: grid;
     gap: clamp(1rem, 0.757rem + 1.036vw, 1.75rem);
-    max-width: 90rem;
     margin-inline: auto;
   }
 
   .gallery-header {
-    max-width: 62ch;
     display: grid;
     gap: 0.75rem;
-    text-align: center;
-    margin-inline: auto;
   }
 
   .gallery-divider {
@@ -738,6 +750,10 @@ const initialSlides = [
   }
 
   @media (max-width: 768px) {
+    .carousel-shell {
+      display: none;
+    }
+
     .main-photo-frame {
       height: clamp(16rem, 14rem + 5vw, 20rem);
     }

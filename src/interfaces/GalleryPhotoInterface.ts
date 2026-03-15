@@ -1,6 +1,8 @@
+import type { ImageMetadata } from "astro";
+
 export interface GalleryPhoto {
   id: number;
-  url: string;
+  image: ImageMetadata;
   title: string;
   category: string;
   date: string;

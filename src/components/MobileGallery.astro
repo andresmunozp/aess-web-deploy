@@ -1,0 +1,556 @@
+---
+import { Image } from "astro:assets";
+import { galleryPhotos } from "@/Data/gallery";
+
+const categories = ["Todas", ...new Set(galleryPhotos.map((p) => p.category))];
+const firstPhoto = galleryPhotos[0];
+---
+
+<div class="mobile-gallery" data-mobile-gallery-root aria-label="Galeria movil">
+  <div class="mobile-category-filter" role="tablist" aria-label="Filtrar fotos por categoria">
+    {
+      categories.map((category) => (
+        <button
+          class="mobile-category-chip"
+          type="button"
+          role="tab"
+          data-mobile-category-btn={category}
+          data-active={category === "Todas"}
+          aria-selected={category === "Todas" ? "true" : "false"}
+          tabindex={category === "Todas" ? "0" : "-1"}
+        >
+          {category}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="mobile-gallery-frame">
+    <div class="mobile-gallery-track" data-mobile-track>
+      {
+        galleryPhotos.map((photo, index) => (
+          <button
+            class="mobile-slide"
+            type="button"
+            data-mobile-slide
+            data-index={index}
+            aria-label={`Abrir imagen completa: ${photo.title}`}
+          >
+            <Image
+              src={photo.image}
+              alt={photo.title}
+              loading={index === 0 ? "eager" : "lazy"}
+              fetchpriority={index === 0 ? "high" : "auto"}
+              widths={[640, 960, 1280]}
+              sizes="100vw"
+            />
+            <span class="mobile-slide-overlay" aria-hidden="true"></span>
+          </button>
+        ))
+      }
+    </div>
+
+    <button class="mobile-nav mobile-nav-prev" type="button" data-mobile-nav="prev" aria-label="Imagen anterior">
+      <span aria-hidden="true">&#8592;</span>
+    </button>
+    <button class="mobile-nav mobile-nav-next" type="button" data-mobile-nav="next" aria-label="Imagen siguiente">
+      <span aria-hidden="true">&#8594;</span>
+    </button>
+
+  </div>
+
+  {
+    firstPhoto && (
+      <>
+        <div class="mobile-gallery-meta">
+          <span class="mobile-meta-category" data-mobile-category>{firstPhoto.category}</span>
+          <h3 data-mobile-title>{firstPhoto.title}</h3>
+          <p data-mobile-date>{firstPhoto.date}</p>
+        </div>
+
+        <div class="mobile-gallery-footer">
+          <div class="mobile-dots" data-mobile-dots aria-label="Seleccionar imagen">
+            {
+              galleryPhotos.map((photo, index) => (
+                <button
+                  class="mobile-dot"
+                  type="button"
+                  data-mobile-dot
+                  data-index={index}
+                  data-active={index === 0}
+                  aria-label={`Ir a la imagen ${index + 1}: ${photo.title}`}
+                ></button>
+              ))
+            }
+          </div>
+        </div>
+
+        <dialog class="mobile-lightbox" data-mobile-lightbox aria-label="Vista ampliada de la imagen">
+          <div class="mobile-lightbox-shell">
+            <button class="mobile-lightbox-close" type="button" data-mobile-close aria-label="Cerrar imagen ampliada">
+              &#10005;
+            </button>
+
+            <div class="mobile-lightbox-media">
+              <img
+                src={firstPhoto.image.src}
+                alt={firstPhoto.title}
+                data-lightbox-image
+                loading="eager"
+              />
+            </div>
+
+            <div class="mobile-lightbox-meta">
+              <span class="mobile-meta-category" data-lightbox-category>{firstPhoto.category}</span>
+              <h3 data-lightbox-title>{firstPhoto.title}</h3>
+              <p data-lightbox-date>{firstPhoto.date}</p>
+            </div>
+          </div>
+        </dialog>
+      </>
+    )
+  }
+</div>
+
+<script define:vars={{ galleryPhotos }}>
+  const mobileGalleryRoot = document.querySelector("[data-mobile-gallery-root]");
+
+  if (mobileGalleryRoot instanceof HTMLElement && galleryPhotos.length > 0) {
+    const mobileTrack = mobileGalleryRoot.querySelector("[data-mobile-track]");
+    const mobileSlides = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-slide]"));
+    const mobileDots = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-dot]"));
+    const mobileNavButtons = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-nav]"));
+    const filterButtons = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-category-btn]"));
+    const categoryElement = mobileGalleryRoot.querySelector("[data-mobile-category]");
+    const titleElement = mobileGalleryRoot.querySelector("[data-mobile-title]");
+    const dateElement = mobileGalleryRoot.querySelector("[data-mobile-date]");
+    const lightbox = mobileGalleryRoot.querySelector("[data-mobile-lightbox]");
+    const lightboxImage = mobileGalleryRoot.querySelector("[data-lightbox-image]");
+    const lightboxCategory = mobileGalleryRoot.querySelector("[data-lightbox-category]");
+    const lightboxTitle = mobileGalleryRoot.querySelector("[data-lightbox-title]");
+    const lightboxDate = mobileGalleryRoot.querySelector("[data-lightbox-date]");
+    const closeButton = mobileGalleryRoot.querySelector("[data-mobile-close]");
+
+    let activeIndex = 0;  // position within visible set
+    let visibleIndexes = galleryPhotos.map((_, i) => i);
+    let scrollFrame = 0;
+
+    const getPhoto = (visiblePos) => galleryPhotos[visibleIndexes[visiblePos]];
+
+    const setActiveMeta = (visiblePos) => {
+      const photo = getPhoto(visiblePos);
+      if (!photo) return;
+
+      if (categoryElement instanceof HTMLElement) categoryElement.textContent = photo.category;
+      if (titleElement instanceof HTMLElement) titleElement.textContent = photo.title;
+      if (dateElement instanceof HTMLElement) dateElement.textContent = photo.date;
+
+      const originalIndex = visibleIndexes[visiblePos];
+      mobileDots.forEach((dot) => {
+        if (!(dot instanceof HTMLElement)) return;
+        const dotIndex = Number(dot.dataset.index);
+        dot.dataset.active = String(dotIndex === originalIndex);
+        dot.setAttribute("aria-current", dotIndex === originalIndex ? "true" : "false");
+      });
+    };
+
+    const scrollToIndex = (index, behavior = "smooth") => {
+      if (!(mobileTrack instanceof HTMLElement)) return;
+      const clamped = Math.max(0, Math.min(index, visibleIndexes.length - 1));
+      mobileTrack.scrollTo({ left: mobileTrack.clientWidth * clamped, behavior });
+    };
+
+    const syncActiveIndex = () => {
+      if (!(mobileTrack instanceof HTMLElement)) return;
+      const next = Math.max(
+        0,
+        Math.min(
+          Math.round(mobileTrack.scrollLeft / Math.max(mobileTrack.clientWidth, 1)),
+          visibleIndexes.length - 1,
+        ),
+      );
+      if (next === activeIndex) return;
+      activeIndex = next;
+      setActiveMeta(activeIndex);
+    };
+
+    const openLightbox = (visiblePos) => {
+      const photo = getPhoto(visiblePos);
+      if (!photo || !(lightbox instanceof HTMLDialogElement)) return;
+
+      if (lightboxImage instanceof HTMLImageElement) {
+        lightboxImage.src = photo.image.src;
+        lightboxImage.alt = photo.title;
+      }
+      if (lightboxCategory instanceof HTMLElement) lightboxCategory.textContent = photo.category;
+      if (lightboxTitle instanceof HTMLElement) lightboxTitle.textContent = photo.title;
+      if (lightboxDate instanceof HTMLElement) lightboxDate.textContent = photo.date;
+
+      lightbox.showModal();
+      document.documentElement.classList.add("mobile-lightbox-open");
+    };
+
+    const closeLightbox = () => {
+      if (!(lightbox instanceof HTMLDialogElement) || !lightbox.open) return;
+      lightbox.close();
+      document.documentElement.classList.remove("mobile-lightbox-open");
+    };
+
+    const setCategory = (category) => {
+      const allIndexes = galleryPhotos.map((_, i) => i);
+      visibleIndexes =
+        category === "Todas"
+          ? allIndexes
+          : allIndexes.filter((i) => galleryPhotos[i].category === category);
+
+      filterButtons.forEach((btn) => {
+        if (!(btn instanceof HTMLElement)) return;
+        const isActive = btn.getAttribute("data-mobile-category-btn") === category;
+        btn.dataset.active = String(isActive);
+        btn.setAttribute("aria-selected", String(isActive));
+        btn.setAttribute("tabindex", isActive ? "0" : "-1");
+      });
+
+      mobileSlides.forEach((slide) => {
+        if (!(slide instanceof HTMLElement)) return;
+        const originalIndex = Number(slide.getAttribute("data-index"));
+        slide.hidden = !visibleIndexes.includes(originalIndex);
+      });
+
+      mobileDots.forEach((dot) => {
+        if (!(dot instanceof HTMLElement)) return;
+        const originalIndex = Number(dot.getAttribute("data-index"));
+        dot.hidden = !visibleIndexes.includes(originalIndex);
+      });
+
+      activeIndex = 0;
+      if (mobileTrack instanceof HTMLElement) {
+        mobileTrack.scrollTo({ left: 0, behavior: "instant" });
+      }
+
+      if (visibleIndexes.length > 0) setActiveMeta(0);
+    };
+
+    mobileTrack?.addEventListener(
+      "scroll",
+      () => {
+        window.cancelAnimationFrame(scrollFrame);
+        scrollFrame = window.requestAnimationFrame(syncActiveIndex);
+      },
+      { passive: true },
+    );
+
+    mobileNavButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const direction = button.getAttribute("data-mobile-nav") === "next" ? 1 : -1;
+        activeIndex = (activeIndex + direction + visibleIndexes.length) % visibleIndexes.length;
+        setActiveMeta(activeIndex);
+        scrollToIndex(activeIndex);
+      });
+    });
+
+    mobileDots.forEach((dot) => {
+      dot.addEventListener("click", () => {
+        const originalIndex = Number(dot.getAttribute("data-index"));
+        const visiblePos = visibleIndexes.indexOf(originalIndex);
+        if (visiblePos < 0) return;
+        activeIndex = visiblePos;
+        setActiveMeta(activeIndex);
+        scrollToIndex(activeIndex);
+      });
+    });
+
+    mobileSlides.forEach((slide) => {
+      slide.addEventListener("click", () => {
+        const originalIndex = Number(slide.getAttribute("data-index"));
+        const visiblePos = visibleIndexes.indexOf(originalIndex);
+        if (visiblePos < 0) return;
+        activeIndex = visiblePos;
+        setActiveMeta(activeIndex);
+        openLightbox(activeIndex);
+      });
+    });
+
+    filterButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const category = button.getAttribute("data-mobile-category-btn") || "Todas";
+        setCategory(category);
+      });
+
+      button.addEventListener("keydown", (event) => {
+        const index = filterButtons.indexOf(button);
+        let targetIndex = index;
+        if (event.key === "ArrowRight") targetIndex = (index + 1) % filterButtons.length;
+        else if (event.key === "ArrowLeft") targetIndex = (index - 1 + filterButtons.length) % filterButtons.length;
+        else return;
+        event.preventDefault();
+        const next = filterButtons[targetIndex];
+        if (next instanceof HTMLElement) {
+          const cat = next.getAttribute("data-mobile-category-btn") || "Todas";
+          setCategory(cat);
+          next.focus();
+        }
+      });
+    });
+
+    closeButton?.addEventListener("click", closeLightbox);
+
+    lightbox?.addEventListener("click", (event) => {
+      if (event.target === lightbox) closeLightbox();
+    });
+
+    lightbox?.addEventListener("close", () => {
+      document.documentElement.classList.remove("mobile-lightbox-open");
+    });
+
+    window.addEventListener("resize", () => {
+      scrollToIndex(activeIndex, "auto");
+    });
+
+    setActiveMeta(activeIndex);
+  }
+</script>
+
+<style>
+  .mobile-gallery {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .mobile-gallery {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .mobile-category-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .mobile-category-chip {
+      font-weight: 500;
+      border: 1px solid var(--stroke-color);
+      color: var(--primary-text-color);
+      background-color: transparent;
+      border-radius: 8px;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.875rem;
+      transition:
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+    }
+
+    .mobile-category-chip:hover {
+      box-shadow:
+        0 0 12px rgb(255 255 255 / 0.4),
+        inset 0 0 12px rgb(255 255 255 / 0.2);
+    }
+
+    .mobile-category-chip[data-active="true"] {
+      border-color: #ffffff;
+      box-shadow:
+        0 0 12px rgb(255 255 255 / 0.4),
+        inset 0 0 12px rgb(255 255 255 / 0.2);
+    }
+
+    .mobile-gallery-frame {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1rem;
+      box-shadow: 0 16px 46px rgb(0 0 0 / 0.35);
+      background: linear-gradient(180deg, rgb(15 23 42 / 0.75), rgb(2 6 23 / 0.95));
+    }
+
+    .mobile-gallery-track {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 100%;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .mobile-gallery-track::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mobile-slide {
+      position: relative;
+      width: 100%;
+      min-height: clamp(18rem, 62vw, 25rem);
+      padding: 0;
+      border: 0;
+      background: transparent;
+      scroll-snap-align: center;
+      cursor: pointer;
+    }
+
+    .mobile-slide img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .mobile-slide-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgb(0 0 0 / 0.04) 0%, rgb(0 0 0 / 0.22) 100%),
+        linear-gradient(90deg, rgb(0 0 0 / 0.15) 0%, rgb(0 0 0 / 0) 28%, rgb(0 0 0 / 0.15) 100%);
+      pointer-events: none;
+    }
+
+    .mobile-nav {
+      position: absolute;
+      top: 50%;
+      z-index: 2;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 999px;
+      border: 1px solid rgb(255 255 255 / 0.26);
+      background: rgb(15 23 42 / 0.5);
+      color: #f8fafc;
+      backdrop-filter: blur(8px);
+      transform: translateY(-50%);
+    }
+
+    .mobile-nav-prev {
+      left: 0.75rem;
+    }
+
+    .mobile-nav-next {
+      right: 0.75rem;
+    }
+
+    .mobile-gallery-meta {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .mobile-meta-category {
+      width: fit-content;
+      padding: 0.36rem 0.72rem;
+      border-radius: 999px;
+      background: #c8342d;
+      color: #ffffff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .mobile-gallery-meta h3,
+    .mobile-lightbox-meta h3 {
+      margin: 0;
+      font-family: "Orbitron", sans-serif;
+      font-size: clamp(1.1rem, 0.92rem + 0.9vw, 1.45rem);
+      color: var(--primary-text-color);
+    }
+
+    .mobile-gallery-meta p,
+    .mobile-lightbox-meta p {
+      margin: 0;
+      color: var(--opaque-color);
+      font-size: 0.95rem;
+    }
+
+    .mobile-gallery-footer {
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .mobile-dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .mobile-dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: rgb(148 163 184 / 0.45);
+      transition:
+        transform 0.2s ease,
+        background-color 0.2s ease,
+        width 0.2s ease;
+    }
+
+    .mobile-dot[data-active="true"] {
+      width: 1.6rem;
+      background: #c8342d;
+    }
+
+    .mobile-lightbox {
+      width: min(100%, 100vw);
+      height: 100dvh;
+      max-width: none;
+      max-height: none;
+      padding: 0;
+      border: 0;
+      background: rgb(2 6 23 / 0.88);
+    }
+
+    .mobile-lightbox::backdrop {
+      background: rgb(2 6 23 / 0.82);
+      backdrop-filter: blur(10px);
+    }
+
+    .mobile-lightbox-shell {
+      position: relative;
+      height: 100%;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .mobile-lightbox-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 2;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 999px;
+      border: 1px solid rgb(255 255 255 / 0.2);
+      background: rgb(15 23 42 / 0.55);
+      color: #ffffff;
+      backdrop-filter: blur(10px);
+    }
+
+    .mobile-lightbox-media {
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 2rem;
+    }
+
+    .mobile-lightbox-media img {
+      width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 0.75rem;
+      background: rgb(15 23 42 / 0.5);
+    }
+
+    .mobile-lightbox-meta {
+      display: grid;
+      gap: 0.45rem;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    :global(html.mobile-lightbox-open),
+    :global(html.mobile-lightbox-open body) {
+      overflow: hidden;
+    }
+  }
+</style>
