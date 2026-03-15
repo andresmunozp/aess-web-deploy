@@ -1,0 +1,115 @@
+---
+import { siteContent } from "@/Data/content";
+
+const { about } = siteContent;
+---
+
+<section id="about">
+  <h2>{about.title}</h2>
+  <div class="about-description">
+    <p>
+      {about.description}
+    </p>
+    <img class="about-image" src="/assets/images/foto-grupal.webp" alt="Imagen grupal de AESS Unicauca" />
+  </div>
+  <div class="wrapper">
+    <div class="card">
+      <h2 class="card-title">{about.mission.title}</h2>
+      <p>
+        {about.mission.description}
+      </p>
+    </div>
+    <div class="card">
+      <h2 class="card-title">{about.vision.title}</h2>
+      <p>
+        {about.vision.description}
+      </p>
+    </div>
+    <div class="card">
+      <h2 class="card-title">{about.values.title}</h2>
+      {about.values.paragraphs.map((paragraph) => (
+        <div class="values-paragraph">
+          <p><strong>{paragraph.question}</strong></p>
+          <p>{paragraph.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .about-description {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .about-image {
+    object-fit: contain;
+    aspect-ratio: 21 / 9;
+    width: clamp(20.313rem, 16.141rem + 17.799vw, 37.5rem);
+    height: auto;
+  }
+  p {
+    max-width: 80ch;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card p {
+    max-width: 55ch;
+  }
+
+  .values-paragraph {
+    margin-bottom: 16px;
+  }
+
+  .values-paragraph p {
+    margin: 0;
+    margin-bottom: 8px;
+  }
+
+  .values-paragraph p:first-child {
+    font-weight: 600;
+  }
+
+  .wrapper {
+    display: flex;
+    gap: 32px;
+    margin-top: 32px;
+    justify-content: center;
+  }
+
+  .card-title {
+    border-bottom: 3px solid;
+    border-image: linear-gradient(to right, #aaaaaa, #444444) 1;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    width: fit-content;
+  }
+
+  @media (max-width: 900px) {
+    .about-description {
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .wrapper {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .about-image {
+      object-fit: contain;
+      width: 100%;
+      height: auto;
+    }
+
+    .card p {
+      max-width: 100%;
+    }
+  }
+
+</style>

@@ -1,0 +1,304 @@
+---
+import { milestones } from "@/Data/milestones";
+import StarIcon from "@/components/icons/StarIcon.astro";
+import GlobeIcon from "@/components/icons/GlobeIcon.astro";
+import RocketIcon from "@/components/icons/RocketIcon.astro";
+import SatelliteIcon from "@/components/icons/SatelliteIcon.astro";
+
+// Asignar iconos a cada hito según su contenido
+const icons = [StarIcon, GlobeIcon, RocketIcon, SatelliteIcon, StarIcon];
+
+// Extraer el año de cada hito
+const getYear = (milestone: string) => {
+  const match = milestone.match(/^\d{4}(?:–\d{4})?/);
+  return match ? match[0] : "";
+};
+---
+
+<section class="milestones-section">
+  <div class="milestones-header">
+    <h2>
+      Hitos que impulsan <span class="highlight">nuestra misión</span>
+    </h2>
+    <p class="subtitle">
+      Un recorrido a través del tiempo, marcando nuestra huella en la divulgación y la ingeniería aeroespacial en el Cauca.
+    </p>
+  </div>
+
+  <div class="timeline-container">
+    <!-- Línea central vertical -->
+    <div class="timeline-line" aria-hidden="true"></div>
+
+    <!-- Hitos -->
+    <div class="timeline-items">
+      {
+        milestones.map((milestone, index) => {
+          const Icon = icons[index];
+          const isOddItem = index % 2 === 0;
+          const year = getYear(milestone.milestone);
+          const title = milestone.milestone.replace(/^\d{4}(?:–\d{4})?\s*–\s*/, "");
+
+          return (
+            <article class={`timeline-item`}>
+              {/* Nodo central con icono */}
+              <div class="timeline-node" aria-hidden="true">
+                <Icon class="node-icon" />
+              </div>
+
+              {/* Contenedor del item */}
+              <div class={`item-content ${isOddItem ? "odd" : "even"}`}>
+                {/* Imagen */}
+                <div class="item-image">
+                  <div class="image-wrapper">
+                    <div class="image-overlay"></div>
+                    <img
+                      src={milestone.photoSrc}
+                      alt={title}
+                      loading="lazy"
+                      width="600"
+                      height="400"
+                    />
+                  </div>
+                </div>
+
+                {/* Texto */}
+                <div class="item-text">
+                  <span class="item-year">{year}</span>
+                  <h3 class="item-title">{title}</h3>
+                  <p class="item-description">{milestone.keyMoment}</p>
+                </div>
+              </div>
+            </article>
+          );
+        })
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .milestones-section {
+    background-color: var(--background-color);
+    position: relative;
+    --timeline-center-gap: clamp(2.5rem, 7vw, 6rem);
+  }
+
+  .milestones-header {
+    margin-bottom: clamp(3rem, 5vw, 6rem);
+  }
+
+  .milestones-header h2 {
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .highlight {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    max-width: 50rem;
+    color: var(--opaque-color);
+    font-size: clamp(1rem, 0.97rem + 0.129vw, 1.125rem);
+  }
+
+  .timeline-container {
+    position: relative;
+    max-width: 75rem;
+  }
+
+  /* Línea central vertical */
+  .timeline-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      var(--stroke-color) 10%,
+      var(--stroke-color) 90%,
+      transparent 100%
+    );
+  }
+
+  .timeline-items {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(4rem, 8vw, 8rem);
+  }
+
+  .timeline-item {
+    position: relative;
+    display: flex;
+    gap: 0;
+    align-items: center;
+  }
+
+
+
+  /* Nodo central */
+  .timeline-node {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: var(--background-color);
+    border: 4px solid var(--stroke-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .node-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--opaque-color);
+    transition: color 0.3s ease;
+  }
+
+  /* Contenedor del item */
+  .item-content {
+    display: flex;
+    width: 100%;
+    gap: 0;
+  }
+
+  .item-content.odd {
+    flex-direction: row-reverse;
+  }
+
+  /* Imagen y texto ocupan el mismo espacio */
+  .item-image,
+  .item-text {
+    flex: 1;
+    align-self: center;
+  }
+
+  /* Padding hacia el centro (nodo) */
+  .item-content.even .item-image {
+    padding-inline-end: var(--timeline-center-gap);
+  }
+
+  .item-content.even .item-text {
+    padding-inline-start: var(--timeline-center-gap);
+  }
+
+  .item-content.odd .item-image {
+    padding-inline-start: var(--timeline-center-gap);
+  }
+
+  .item-content.odd .item-text {
+    padding-inline-end: var(--timeline-center-gap);
+  }
+
+  .item-text {
+    text-align: left;
+  }
+
+  /* Imagen */
+  .image-wrapper {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border: none;
+    border-radius: 4px;
+    overflow: hidden;
+    object-fit: contain;
+    aspect-ratio: 3 / 2;
+    box-shadow: 0 10px 40px rgb(0 0 0 / 0.3);
+  }
+
+  .image-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgb(0 0 0 / 0.2);
+    z-index: 1;
+    transition: background-color 0.5s ease;
+  }
+
+  .image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Texto */
+  .item-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .item-year {
+    display: inline-block;
+    align-self: inherit;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    background-color: rgb(220 38 38 / 0.1);
+    color: #ff4141;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    border: 1px solid rgb(220 38 38 / 0.2);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 10px rgb(220 38 38 / 0.1);
+    width: fit-content;
+  }
+
+  .item-year {
+    align-self: flex-start;
+  }
+
+  .item-title {
+    font-family: "Orbitron", sans-serif;
+    font-size: clamp(1.25rem, 2vw, 1.75rem);
+    font-weight: 700;
+    color: var(--primary-text-color);
+    line-height: 1.3;
+  }
+
+  .item-description {
+    color: var(--secondary-text-color);
+    line-height: 1.7;
+  }
+
+  /* Responsive: Mobile */
+  @media (max-width: 900px) {
+    .timeline-line,
+    .timeline-node {
+      display: none;
+    }
+
+    .item-content {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.5rem;
+    }
+
+    .item-image,
+    .item-text {
+      flex: initial;
+      width: 100%;
+      align-self: stretch;
+      padding: 0;
+    }
+
+  .item-content.even .item-image,
+  .item-content.even .item-text,
+  .item-content.odd .item-image,
+  .item-content.odd .item-text {
+    padding: 0;
+  }
+
+</style>

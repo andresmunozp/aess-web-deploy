@@ -1,0 +1,35 @@
+---
+import type { LogoInterface } from "@/interfaces/LogoInterface";
+
+interface Props extends LogoInterface {}
+
+const { color = "white", width = "32", height = "32" } = Astro.props;
+---
+
+<svg
+  width={width}
+  height={height}
+  viewBox="0 0 32 32"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <g clip-path="url(#clip0_35_385)">
+    <path
+      d="M5.33331 5.3335L20.9773 26.6668H26.6666L11.0226 5.3335H5.33331Z"
+      stroke={color}
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"></path>
+    <path
+      d="M5.33331 26.6668L14.3573 17.6428M17.6373 14.3628L26.6666 5.3335"
+      stroke={color}
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"></path>
+  </g>
+  <defs>
+    <clipPath id="clip0_35_385">
+      <rect width="32" height="32" fill="white"></rect>
+    </clipPath>
+  </defs>
+</svg>

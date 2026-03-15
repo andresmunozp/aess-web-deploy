@@ -1,0 +1,98 @@
+---
+import AessLogo from "@/components/icons/AessLogo.astro";
+import MobileMenu from "./MobileMenu.astro";
+import { siteContent } from "@/Data/content";
+
+const { header } = siteContent;
+---
+
+<header>
+  <a href="/" aria-label={header.logoAlt}>
+    <AessLogo />
+  </a>
+
+  <nav>
+    <ul>
+      <li><a href="#about">{header.nav.about}</a></li>
+      <li><a href="#divisions">{header.nav.divisions}</a></li>
+      <li><a href="#contact">{header.nav.contact}</a></li>
+    </ul>
+  </nav>
+  <MobileMenu />
+</header>
+
+<script>
+  const header = document.querySelector("header");
+  const mobileMenuButton = document.getElementById("menu-mobile-button");
+  const mobileMenu = document.getElementById("mobile-menu");
+
+  // Observar cambios en el atributo data-state del menú móvil
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (
+        mutation.type === "attributes" &&
+        mutation.attributeName === "data-state"
+      ) {
+        const menuState = mobileMenu?.getAttribute("data-state");
+        if (menuState === "open") {
+          header?.classList.add("menu-open");
+        } else {
+          header?.classList.remove("menu-open");
+        }
+      }
+    });
+  });
+
+  // Observar el menú móvil si existe
+  if (mobileMenu) {
+    observer.observe(mobileMenu, { attributes: true });
+  }
+</script>
+
+<style>
+  header {
+    position: fixed;
+    height: var(--header-block-size);
+    inset-inline: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 var(--padding-page);
+    background: linear-gradient(
+      to bottom,
+      var(--background-color),
+      transparent
+    );
+    animation: enhance-header linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 200px;
+    z-index: 10;
+    transition:
+      background-color 0.3s ease,
+      border-bottom 0.3s ease;
+  }
+
+  ul {
+    display: flex;
+    gap: 24px;
+  }
+
+  /* Efecto de hover mejorado: solo cuando hay hover real en un li */
+  ul:has(li:hover) li:not(:hover) {
+    opacity: 0.5;
+    transition: opacity 0.4s ease;
+  }
+
+  @keyframes enhance-header {
+    to {
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent);
+      backdrop-filter: blur(5px);
+    }
+  }
+
+  @media (max-width: 768px) {
+    nav {
+      display: none;
+    }
+  }
+</style>

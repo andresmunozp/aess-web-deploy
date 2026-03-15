@@ -1,0 +1,125 @@
+---
+interface Props {
+  name: string;
+  logoSrc: string;
+  logoAlt: string;
+  description: string;
+  website?: string;
+}
+
+const { name, logoSrc, logoAlt, description, website } = Astro.props;
+---
+
+{
+  website ? (
+    <a
+      href={website}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="ally-card"
+    >
+      <div class="ally-logo">
+        <img
+          src={logoSrc}
+          alt={logoAlt}
+          loading="lazy"
+          width="120"
+          height="80"
+        />
+      </div>
+      <div class="ally-info">
+        <h3>{name}</h3>
+        <p>{description}</p>
+      </div>
+    </a>
+  ) : (
+    <div class="ally-card ally-card--disabled">
+      <div class="ally-logo">
+        <img
+          src={logoSrc}
+          alt={logoAlt}
+          loading="lazy"
+          width="300"
+          height="300"
+        />
+      </div>
+      <div class="ally-info">
+        <h3>{name}</h3>
+        <p>{description}</p>
+      </div>
+    </div>
+  )
+}
+
+<style>
+
+  .ally-card {
+    display: block;
+    border-radius: 8px;
+    transition:
+      box-shadow 0.3s ease;
+    background-color: transparent;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+
+
+  .ally-card--disabled {
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  .ally-card--disabled:hover {
+    transform: none;
+    border-color: var(--stroke-color);
+  }
+
+  .ally-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 180px;
+    width: 100%;
+    position: relative;
+    background-color: white;
+    padding: 8px;
+    border-radius: 8px;
+  }
+
+  .ally-logo img {
+    max-width: 300px;
+    max-height: 150px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: grayscale(100%) brightness(0.8);
+    transition: filter 0.3s ease;
+  }
+
+  .ally-card:hover .ally-logo img {
+    filter: grayscale(0%) brightness(1);
+  }
+
+  .ally-info {
+    padding: 16px 0;
+  }
+
+  .ally-info h3 {
+    color: var(--primary-text-color);
+    margin-bottom: 8px;
+  }
+
+  .ally-info p {
+    color: var(--secondary-text-color);
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    .ally-logo img{
+      filter: grayscale(0%) brightness(1);
+    }
+  }
+
+</style>

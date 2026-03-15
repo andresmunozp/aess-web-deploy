@@ -1,0 +1,755 @@
+---
+import { galleryPhotos } from "@/Data/gallery";
+
+const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.category))];
+const normalizeIndex = (index: number) => {
+  if (galleryPhotos.length === 0) {
+    return 0;
+  }
+
+  return (index + galleryPhotos.length) % galleryPhotos.length;
+};
+
+const initialSlides = [
+  galleryPhotos[normalizeIndex(-1)],
+  galleryPhotos[normalizeIndex(0)],
+  galleryPhotos[normalizeIndex(1)],
+];
+---
+
+<section class="gallery-section" id="gallery" data-gallery-root>
+  <div class="gallery-header">
+    <h2>Momentos de Nuestra Organizacion</h2>
+    <div class="gallery-divider" aria-hidden="true"></div>
+    <p>
+      Explora los sucesos, eventos y recuerdos mas importantes que hemos compartido juntos.
+    </p>
+  </div>
+
+  <div class="carousel-shell">
+    <div class="category-filter" role="tablist" aria-label="Filtrar fotos por categoria">
+      {
+        categories.map((category, index) => (
+          <button
+            class="category-chip"
+            data-category-button
+            data-category={category}
+            data-active={category === "Todas"}
+            type="button"
+            role="tab"
+            id={`gallery-tab-${index}`}
+            aria-controls="gallery-panel"
+            aria-selected={category === "Todas" ? "true" : "false"}
+            tabindex={category === "Todas" ? "0" : "-1"}
+          >
+            {category}
+          </button>
+        ))
+      }
+    </div>
+    <div
+      class="main-photo-frame"
+      role="tabpanel"
+      id="gallery-panel"
+      data-gallery-panel
+      tabindex="0"
+      aria-labelledby="gallery-tab-0"
+    >
+      <div class="main-photo-track" data-main-track>
+        {
+          initialSlides.map((photo, index) => (
+            <article
+              class="main-slide"
+              data-main-slide
+              data-window-pos={index - 1}
+              data-current={index === 1 ? "true" : "false"}
+              hidden={index !== 1}
+            >
+              <img
+                data-slide-image
+                src={photo?.url}
+                alt={photo?.title}
+                loading={index === 1 ? "eager" : "lazy"}
+                fetchpriority={index === 1 ? "high" : "auto"}
+                width="1280"
+                height="720"
+              />
+              <div class="main-photo-overlay"></div>
+
+              <div class="main-photo-meta">
+                <span class="meta-category" data-slide-category>{photo?.category}</span>
+                <h3 data-slide-title>{photo?.title}</h3>
+                <p data-slide-date>{photo?.date}</p>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+
+      <div class="main-photo-controls" aria-label="Navegacion del carrusel">
+        <button class="control-btn" type="button" data-action="prev" aria-label="Foto anterior">
+          &#8592;
+        </button>
+        <button class="control-btn" type="button" data-action="next" aria-label="Foto siguiente">
+          &#8594;
+        </button>
+      </div>
+    </div>
+
+    <div class="thumbnail-wrap">
+      <div class="thumbnail-track" data-thumbnail-track>
+      {
+        galleryPhotos.map((photo, index) => (
+          <button
+            class="thumbnail-item"
+            data-thumbnail
+            data-id={photo.id}
+            data-index={index}
+            data-active={index === 0}
+            type="button"
+            aria-label={`Abrir foto: ${photo.title}`}
+          >
+            <img src={photo.url} alt={photo.title} loading="lazy" width="160" height="90" />
+          </button>
+        ))
+      }
+      </div>
+      <p class="empty-state" data-empty-state hidden>
+        No hay fotos disponibles en esta categoria.
+      </p>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ galleryPhotos }}>
+  const galleryRoot = document.querySelector("[data-gallery-root]");
+
+  if (galleryRoot && galleryPhotos.length > 0) {
+    const mainTrack = galleryRoot.querySelector("[data-main-track]");
+    const mainSlides = galleryRoot.querySelectorAll("[data-main-slide]");
+    const categoryButtons = galleryRoot.querySelectorAll("[data-category-button]");
+    const galleryPanel = galleryRoot.querySelector("[data-gallery-panel]");
+    const thumbnailTrack = galleryRoot.querySelector("[data-thumbnail-track]");
+    const thumbnailButtons = galleryRoot.querySelectorAll("[data-thumbnail]");
+    const controlButtons = galleryRoot.querySelectorAll("[data-action]");
+    const emptyState = galleryRoot.querySelector("[data-empty-state]");
+
+    const allIndexes = galleryPhotos.map((_, index) => index);
+    const preloadedUrls = new Set();
+    const imageLoadPromises = new Map();
+
+    let activeCategory = "Todas";
+    let visibleIndexes = [...allIndexes];
+    let activeIndex = 0;
+    let isAnimating = false;
+    let hasHydrated = false;
+
+    const normalized = (index, length) => {
+      if (length === 0) {
+        return 0;
+      }
+
+      return (index + length) % length;
+    };
+
+    const getVisibleIndexes = () => {
+      if (activeCategory === "Todas") {
+        return [...allIndexes];
+      }
+
+      return allIndexes.filter((index) => galleryPhotos[index].category === activeCategory);
+    };
+
+    const getPhotoAtOffset = (offset) => {
+      const length = visibleIndexes.length;
+      const targetVisibleIndex = normalized(activeIndex + offset, length);
+      const originalIndex = visibleIndexes[targetVisibleIndex];
+      return galleryPhotos[originalIndex];
+    };
+
+    const preloadImage = (url) => {
+      if (!url) {
+        return Promise.resolve();
+      }
+
+      const existingPromise = imageLoadPromises.get(url);
+      if (existingPromise) {
+        return existingPromise;
+      }
+
+      const imagePromise = new Promise((resolve) => {
+        const image = new Image();
+        image.decoding = "async";
+
+        image.onload = () => {
+          preloadedUrls.add(url);
+          resolve();
+        };
+
+        image.onerror = () => {
+          resolve();
+        };
+
+        image.src = url;
+      });
+
+      imageLoadPromises.set(url, imagePromise);
+      return imagePromise;
+    };
+
+    const setSlideContent = (slide, photo) => {
+      if (!(slide instanceof HTMLElement) || !photo) {
+        return;
+      }
+
+      const image = slide.querySelector("[data-slide-image]");
+      const title = slide.querySelector("[data-slide-title]");
+      const category = slide.querySelector("[data-slide-category]");
+      const date = slide.querySelector("[data-slide-date]");
+
+      if (image instanceof HTMLImageElement) {
+        const currentSrc = image.getAttribute("src");
+        image.dataset.requestedSrc = photo.url;
+
+        if (currentSrc !== photo.url) {
+          image.style.opacity = "0";
+
+          preloadImage(photo.url).then(() => {
+            if (image.dataset.requestedSrc !== photo.url) {
+              return;
+            }
+
+            image.src = photo.url;
+            image.alt = photo.title;
+
+            requestAnimationFrame(() => {
+              if (image.dataset.requestedSrc === photo.url) {
+                image.style.opacity = "1";
+              }
+            });
+          });
+        } else {
+          image.style.opacity = "1";
+        }
+
+        image.alt = photo.title;
+      }
+
+      if (title instanceof HTMLElement) {
+        title.textContent = photo.title;
+      }
+
+      if (category instanceof HTMLElement) {
+        category.textContent = photo.category;
+      }
+
+      if (date instanceof HTMLElement) {
+        date.textContent = photo.date;
+      }
+    };
+
+    const preloadNeighbors = () => {
+      if (visibleIndexes.length < 2) {
+        return;
+      }
+
+      const previousPhoto = getPhotoAtOffset(-1);
+      const nextPhoto = getPhotoAtOffset(1);
+
+      [previousPhoto, nextPhoto].forEach((photo) => {
+        if (!photo) {
+          return;
+        }
+
+        preloadImage(photo.url);
+      });
+    };
+
+    const updateThumbnailState = () => {
+      if (emptyState instanceof HTMLElement) {
+        emptyState.hidden = visibleIndexes.length > 0;
+      }
+
+      thumbnailButtons.forEach((button) => {
+        if (!(button instanceof HTMLElement)) {
+          return;
+        }
+
+        const originalIndex = Number(button.getAttribute("data-index"));
+        const isVisible = visibleIndexes.includes(originalIndex);
+        const activeOriginalIndex = visibleIndexes[activeIndex];
+        const isActive = isVisible && originalIndex === activeOriginalIndex;
+
+        button.hidden = !isVisible;
+        button.setAttribute("data-active", String(isActive));
+      });
+    };
+
+    const renderSlides = (shouldScrollThumbnail = false) => {
+      if (!(mainTrack instanceof HTMLElement)) {
+        return;
+      }
+
+      if (visibleIndexes.length === 0) {
+        mainSlides.forEach((slide) => {
+          if (slide instanceof HTMLElement) {
+            slide.hidden = true;
+          }
+        });
+        updateThumbnailState();
+        return;
+      }
+
+      const previousSlide = galleryRoot.querySelector('[data-main-slide][data-window-pos="-1"]');
+      const currentSlide = galleryRoot.querySelector('[data-main-slide][data-window-pos="0"]');
+      const nextSlide = galleryRoot.querySelector('[data-main-slide][data-window-pos="1"]');
+      const currentPhoto = getPhotoAtOffset(0);
+
+      if (previousSlide instanceof HTMLElement) {
+        previousSlide.hidden = true;
+        previousSlide.dataset.current = "false";
+      }
+
+      if (currentSlide instanceof HTMLElement) {
+        currentSlide.hidden = false;
+        currentSlide.dataset.current = "true";
+        setSlideContent(currentSlide, currentPhoto);
+      }
+
+      if (nextSlide instanceof HTMLElement) {
+        nextSlide.hidden = true;
+        nextSlide.dataset.current = "false";
+      }
+
+      mainTrack.style.transform = "none";
+      mainTrack.style.transition = "none";
+      preloadNeighbors();
+
+      updateThumbnailState();
+
+      if (shouldScrollThumbnail) {
+        const activeThumbnail = thumbnailTrack?.querySelector('[data-active="true"]');
+        if (activeThumbnail instanceof HTMLElement) {
+          requestAnimationFrame(() => {
+            activeThumbnail.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+          });
+        }
+      }
+    };
+
+    const stepSlide = (direction) => {
+      if (isAnimating || visibleIndexes.length <= 1) {
+        return;
+      }
+
+      isAnimating = true;
+      const delta = direction === "next" ? 1 : -1;
+      activeIndex = normalized(activeIndex + delta, visibleIndexes.length);
+      renderSlides(true);
+
+      window.setTimeout(() => {
+        isAnimating = false;
+      }, 180);
+    };
+
+    const setCategory = (category) => {
+      activeCategory = category;
+      visibleIndexes = getVisibleIndexes();
+      activeIndex = 0;
+      isAnimating = false;
+
+      let activeCategoryButton = null;
+      categoryButtons.forEach((button) => {
+        const isActive = button.getAttribute("data-category") === category;
+        button.setAttribute("data-active", String(isActive));
+        button.setAttribute("aria-selected", String(isActive));
+        button.setAttribute("tabindex", isActive ? "0" : "-1");
+
+        if (isActive) {
+          activeCategoryButton = button;
+        }
+      });
+
+      if (galleryPanel instanceof HTMLElement && activeCategoryButton instanceof HTMLElement) {
+        const activeButtonId = activeCategoryButton.getAttribute("id");
+        if (activeButtonId) {
+          galleryPanel.setAttribute("aria-labelledby", activeButtonId);
+        }
+      }
+
+      renderSlides(hasHydrated);
+    };
+
+    galleryRoot.addEventListener("click", (event) => {
+      const target = event.target;
+
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const categoryButton = target.closest("[data-category-button]");
+      const thumbnailButton = target.closest("[data-thumbnail]");
+      const controlButton = target.closest("[data-action]");
+
+      if (categoryButton instanceof HTMLElement) {
+        const selectedCategory = categoryButton.getAttribute("data-category") || "Todas";
+        setCategory(selectedCategory);
+      }
+
+      if (thumbnailButton instanceof HTMLElement) {
+        const originalIndex = Number(thumbnailButton.getAttribute("data-index"));
+        const nextActiveIndex = visibleIndexes.indexOf(originalIndex);
+
+        if (!Number.isNaN(originalIndex) && nextActiveIndex >= 0) {
+          activeIndex = nextActiveIndex;
+          renderSlides(true);
+        }
+      }
+
+      if (controlButton instanceof HTMLElement) {
+        const action = controlButton.getAttribute("data-action");
+        if (action === "next") {
+          stepSlide("next");
+        }
+
+        if (action === "prev") {
+          stepSlide("prev");
+        }
+      }
+    });
+
+    controlButtons.forEach((button) => {
+      button.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") {
+          return;
+        }
+
+        event.preventDefault();
+        button.click();
+      });
+    });
+
+    categoryButtons.forEach((button, index) => {
+      button.addEventListener("keydown", (event) => {
+        if (!(event.currentTarget instanceof HTMLElement)) {
+          return;
+        }
+
+        let targetIndex = index;
+
+        if (event.key === "ArrowRight") {
+          targetIndex = normalized(index + 1, categoryButtons.length);
+        } else if (event.key === "ArrowLeft") {
+          targetIndex = normalized(index - 1, categoryButtons.length);
+        } else if (event.key === "Home") {
+          targetIndex = 0;
+        } else if (event.key === "End") {
+          targetIndex = categoryButtons.length - 1;
+        } else if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.currentTarget.click();
+          return;
+        } else {
+          return;
+        }
+
+        event.preventDefault();
+        const nextButton = categoryButtons[targetIndex];
+
+        if (nextButton instanceof HTMLElement) {
+          const selectedCategory = nextButton.getAttribute("data-category") || "Todas";
+          setCategory(selectedCategory);
+          nextButton.focus();
+        }
+      });
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (visibleIndexes.length === 0) {
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        stepSlide("prev");
+      }
+
+      if (event.key === "ArrowRight") {
+        stepSlide("next");
+      }
+    });
+
+    renderSlides(false);
+    hasHydrated = true;
+  }
+</script>
+
+<style>
+  .gallery-section {
+    display: grid;
+    gap: clamp(1rem, 0.757rem + 1.036vw, 1.75rem);
+    max-width: 90rem;
+    margin-inline: auto;
+  }
+
+  .gallery-header {
+    max-width: 62ch;
+    display: grid;
+    gap: 0.75rem;
+    text-align: center;
+    margin-inline: auto;
+  }
+
+  .gallery-divider {
+    width: 6rem;
+    height: 0.3rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #c8342d 0%, #de4a4a 100%);
+    margin-inline: auto;
+  }
+
+  .gallery-header h2 {
+    margin: 0;
+  }
+
+  .gallery-header p {
+    margin: 0;
+    color: var(--opaque-color);
+  }
+
+  .category-filter {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.625rem;
+    margin-bottom: clamp(0.75rem, 0.507rem + 1.036vw, 1.5rem);
+  }
+
+  .category-chip {
+    font-weight: 500;
+    border: 1px solid var(--stroke-color);
+    color: var(--primary-text-color);
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 0.93rem;
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease,
+  }
+
+  .category-chip:hover {
+    box-shadow:
+      0 0 12px rgb(255 255 255 / 0.4),
+      inset 0 0 12px rgb(255 255 255 / 0.2);
+  }
+
+  .category-chip[data-active="true"] {
+    border: 1px solid #ffffff;
+    box-shadow:
+      0 0 12px rgb(255 255 255 / 0.4),
+      inset 0 0 12px rgb(255 255 255 / 0.2);
+  }
+
+  .carousel-shell {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .main-photo-frame {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 16px 46px rgb(0 0 0 / 0.35);
+    width: 100%;
+    height: clamp(20rem, 18rem + 8.5vw, 28rem);
+    margin-inline: auto;
+  }
+
+  .main-photo-track {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .main-slide {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: none;
+  }
+
+  .main-slide[data-current="true"] {
+    display: block;
+  }
+
+  .main-slide img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+    object-position: center;
+    opacity: 1;
+    transition: opacity 0.18s ease;
+  }
+
+  .main-photo-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgb(0 0 0 / 0) 45%, rgb(0 0 0 / 0.68) 100%),
+      linear-gradient(90deg, rgb(0 0 0 / 0.2) 0%, rgb(0 0 0 / 0) 40%);
+    pointer-events: none;
+  }
+
+  .main-photo-meta {
+    position: absolute;
+    left: clamp(0.85rem, 0.53rem + 1.359vw, 2rem);
+    right: clamp(0.85rem, 0.53rem + 1.359vw, 2rem);
+    bottom: clamp(0.85rem, 0.53rem + 1.359vw, 2rem);
+    z-index: 2;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .meta-category {
+    width: fit-content;
+    font-size: clamp(1rem, 0.97rem + 0.129vw, 1.125rem);
+    background: #c8342d;
+    color: var(--primary-text-color);
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 0.34rem 0.72rem;
+  }
+
+  .main-photo-meta h3 {
+    margin: 0;
+    color: #ffffff;
+    font-family: "Orbitron", sans-serif;
+    font-size: clamp(1.15rem, 0.909rem + 1.036vw, 2.15rem);
+    text-shadow: 0 8px 24px rgb(0 0 0 / 0.6);
+  }
+
+  .main-photo-meta p {
+    margin: 0;
+    color: #d1d5db;
+    font-size: 0.9rem;
+  }
+
+  .main-photo-controls {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 3;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .control-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.35);
+    color: #f3f4f6;
+    font-size: 1rem;
+    backdrop-filter: blur(5px);
+    transition:
+      box-shadow 0.3s ease,
+  }
+
+  .control-btn:hover {
+    box-shadow:
+      0 0 12px rgb(255 255 255 / 0.4),
+      inset 0 0 12px rgb(255 255 255 / 0.2);
+  }
+
+  .thumbnail-wrap {
+    margin-top: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .thumbnail-track {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.9rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0.2rem 0.8rem;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--stroke-color) 40%, transparent) transparent;
+    max-height: clamp(7rem, 5.5rem + 6.4vw, 11rem);
+  }
+
+  /* Estilos globales para thumbnails renderizados dinámicamente */
+  :global(.gallery-section .thumbnail-item) {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    width: clamp(8rem, 6.649rem + 5.765vw, 13.563rem);
+    height: clamp(5.7rem, 4.761rem + 4.005vw, 9.563rem);
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    padding: 0;
+    background: #0f172a;
+    cursor: pointer;
+    transition:
+      transform 0.3s ease,
+      border-color 0.3s ease,
+      opacity 0.3s ease,
+      box-shadow 0.3s ease;
+    opacity: 0.5;
+    transform: scale(0.95);
+    will-change: transform, opacity;
+  }
+
+  :global(.gallery-section .thumbnail-item[data-active="true"]) {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  :global(.gallery-section .thumbnail-item:hover:not([data-active="true"])) {
+    opacity: 0.85;
+    transform: scale(0.98);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+  }
+
+  :global(.gallery-section .thumbnail-item img) {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    pointer-events: none;
+  }
+
+  .empty-state {
+    margin: 0;
+    color: var(--opaque-color);
+    text-align: center;
+    padding: 1.4rem 0;
+  }
+
+  @media (max-width: 1024px) {
+    .main-photo-frame {
+      height: clamp(18rem, 16rem + 6vw, 24rem);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .main-photo-frame {
+      height: clamp(16rem, 14rem + 5vw, 20rem);
+    }
+
+    .main-photo-controls {
+      top: auto;
+      bottom: 0.8rem;
+      right: 0.8rem;
+    }
+
+    .thumbnail-track {
+      gap: 0.7rem;
+    }
+  }
+</style>

@@ -1,0 +1,84 @@
+---
+import FacebookLogo from "../icons/FacebookLogo.astro";
+import InstagramLogo from "../icons/InstagramLogo.astro";
+import LinkedinLogo from "../icons/LinkedinLogo.astro";
+import XLogo from "../icons/XLogo.astro";
+import type { LogoInterface } from "../../interfaces/LogoInterface";
+
+interface Props extends LogoInterface {}
+
+const { color, width, height } = Astro.props;
+
+// Configuración de redes sociales
+const socialNetworks = [
+  {
+    name: "Instagram",
+    href: "https://www.instagram.com/aessunicauca/",
+    component: InstagramLogo,
+    ariaLabel: "Síguenos en Instagram",
+  },
+  {
+    name: "Facebook",
+    href: "https://www.facebook.com/aessunicauca/",
+    component: FacebookLogo,
+    ariaLabel: "Síguenos en Facebook",
+  },
+  {
+    name: "LinkedIn",
+    href: "https://www.linkedin.com/in/aess-unicauca-25a0161a9/",
+    component: LinkedinLogo,
+    ariaLabel: "Conéctate en LinkedIn",
+  },
+  {
+    name: "X (Twitter)",
+    href: "https://x.com/AessUnicauca",
+    component: XLogo,
+    ariaLabel: "Síguenos en X",
+  },
+];
+---
+
+<ul class="social-links">
+  {
+    socialNetworks.map((network) => {
+      const { component: Component, href, ariaLabel } = network;
+      return (
+        <li>
+          <a
+            href={href}
+            rel="noopener noreferrer"
+            target="_blank"
+            aria-label={ariaLabel}
+            class="social-link"
+          >
+            <Component color={color} width={width} height={height} />
+          </a>
+        </li>
+      );
+    })
+  }
+</ul>
+
+<style>
+  .social-links {
+    display: flex;
+    gap: 16px;
+    padding: 0;
+    margin: 0;
+  }
+
+  .social-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: 
+    filter 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+    border-radius: 8px;
+  }
+
+  .social-link:hover {
+    transform: scale(1.15);
+    filter: brightness(1.3) drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+  }
+</style>

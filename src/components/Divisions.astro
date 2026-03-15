@@ -1,0 +1,36 @@
+---
+import Card from "@/components/ui/Card.astro";
+import { divisions } from "@/Data/divisions";
+---
+
+<section id="divisions" class="divisions-section">
+  <h2>Nuestras Divisiones</h2>
+  <div class="divisions-grid">
+    {
+      divisions.map((division) => {
+        const { imageSrc, imageAlt, division: divisionName } = division;
+        return (
+          <Card
+            imageSrc={imageSrc}
+            imageAlt={imageAlt}
+            division={divisionName}
+          />
+        );
+      })
+    }
+  </div>
+</section>
+
+<style>
+  h2 {
+    margin-bottom: 48px;
+  }
+
+  .divisions-grid {
+    display: grid;
+    justify-content: left;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 32px;
+    margin: 0 auto;
+  }
+</style>

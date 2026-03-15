@@ -1,0 +1,304 @@
+---
+// Componente de banner de notificaciones reutilizable
+export interface Props {
+  type?: "success" | "error" | "info" | "warning";
+  emoji?: string;
+  title?: string;
+  message?: string;
+  autoHide?: boolean;
+  duration?: number;
+  className?: string;
+}
+
+const {
+  type = "info",
+  emoji = "🚀",
+  title = "¡Notificación!",
+  message = "Mensaje de notificación",
+  autoHide = true,
+  duration = 5000,
+  className = "",
+} = Astro.props;
+
+// Emojis por defecto según el tipo
+const defaultEmojis = {
+  success: "🚀",
+  error: "🛸",
+  info: "ℹ️",
+  warning: "⚠️",
+};
+
+const finalEmoji = emoji || defaultEmojis[type];
+---
+
+<div
+  id="notification-banner"
+  class={`notification-banner hidden ${className}`}
+  data-auto-hide={autoHide}
+  data-duration={duration}
+  data-type={type}
+>
+  <div class={`notification-content ${type}`}>
+    <div class="notification-icon">
+      <span id="notification-emoji">{finalEmoji}</span>
+    </div>
+    <div class="notification-text">
+      <h4 id="notification-title">{title}</h4>
+      <p id="notification-message">{message}</p>
+    </div>
+    <button
+      id="close-notification"
+      class="close-btn"
+      aria-label="Cerrar notificación"
+      type="button"
+    >
+      ×
+    </button>
+  </div>
+</div>
+
+<style>
+  button {
+    font-weight: 500;
+    border: 1px solid var(--stroke-color);
+    color: var(--primary-text-color);
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 12px 24px;
+    transition: background-color 0.3s ease;
+  }
+  /* Banner de notificaciones */
+  .notification-banner {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    z-index: 1000;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    opacity: 0;
+  }
+
+  .notification-banner.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  .notification-banner.hidden {
+    display: none;
+  }
+
+  .notification-content {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 350px;
+    max-width: 500px;
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+  }
+
+  .notification-content.success {
+    border-color: #22c55e;
+    box-shadow:
+      0 20px 25px -5px rgba(34, 197, 94, 0.1),
+      0 10px 10px -5px rgba(34, 197, 94, 0.04),
+      0 0 0 1px rgba(34, 197, 94, 0.2),
+      0 0 20px rgba(34, 197, 94, 0.3);
+  }
+
+  .notification-content.error {
+    border-color: #ef4444;
+    box-shadow:
+      0 20px 25px -5px rgba(239, 68, 68, 0.1),
+      0 10px 10px -5px rgba(239, 68, 68, 0.04),
+      0 0 0 1px rgba(239, 68, 68, 0.2),
+      0 0 20px rgba(239, 68, 68, 0.3);
+  }
+
+  .notification-content.info {
+    border-color: #3b82f6;
+    box-shadow:
+      0 20px 25px -5px rgba(59, 130, 246, 0.1),
+      0 10px 10px -5px rgba(59, 130, 246, 0.04),
+      0 0 0 1px rgba(59, 130, 246, 0.2),
+      0 0 20px rgba(59, 130, 246, 0.3);
+  }
+
+  .notification-content.warning {
+    border-color: #f59e0b;
+    box-shadow:
+      0 20px 25px -5px rgba(245, 158, 11, 0.1),
+      0 10px 10px -5px rgba(245, 158, 11, 0.04),
+      0 0 0 1px rgba(245, 158, 11, 0.2),
+      0 0 20px rgba(245, 158, 11, 0.3);
+  }
+
+  .notification-icon {
+    font-size: 2rem;
+    animation: bounce 1s ease-in-out;
+  }
+
+  .notification-text h4 {
+    margin: 0 0 4px 0;
+    color: var(--primary-text-color);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .notification-text p {
+    margin: 0;
+    color: var(--secondary-text-color);
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--secondary-text-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--primary-text-color);
+  }
+
+  /* Animaciones */
+  @keyframes bounce {
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+      transform: translateY(0);
+    }
+    40% {
+      transform: translateY(-10px);
+    }
+    60% {
+      transform: translateY(-5px);
+    }
+  }
+
+  @keyframes glow {
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+    }
+  }
+
+  .notification-content.success {
+    animation: glow 2s ease-in-out;
+  }
+
+  @media (max-width: 768px) {
+    .notification-content {
+      min-width: 300px;
+      max-width: 90vw;
+      margin: 0 20px;
+    }
+
+    .notification-banner {
+      left: 20px;
+      right: 20px;
+      transform: translateY(-100px);
+    }
+
+    .notification-banner.show {
+      transform: translateY(0);
+    }
+  }
+</style>
+
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    const banner = document.querySelector("#notification-banner")!;
+    const closeBtn = document.querySelector("#close-notification")!;
+
+    if (!banner || !closeBtn) return;
+
+    // Leer configuración desde data attributes
+    const autoHide = banner.getAttribute("data-auto-hide") === "true";
+    const duration = parseInt(banner.getAttribute("data-duration") || "5000");
+
+    function showNotification() {
+      banner.classList.remove("hidden");
+      setTimeout(function () {
+        banner.classList.add("show");
+      }, 100);
+
+      // Auto-hide si está habilitado
+      if (autoHide) {
+        setTimeout(function () {
+          hideNotification();
+        }, duration);
+      }
+    }
+
+    function hideNotification() {
+      banner.classList.remove("show");
+      setTimeout(function () {
+        banner.classList.add("hidden");
+      }, 500);
+    }
+
+    // Event listeners
+    closeBtn.addEventListener("click", hideNotification);
+
+    // Cerrar con Escape
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && banner.classList.contains("show")) {
+        hideNotification();
+      }
+    });
+
+    // API pública mejorada para controlar el banner
+    window.notificationBanner = {
+      show: function (autoHideOverride) {
+        showNotification();
+
+        if (typeof autoHideOverride === "boolean" && autoHideOverride) {
+          setTimeout(function () {
+            hideNotification();
+          }, duration);
+        }
+      },
+      hide: hideNotification,
+      updateContent: function (props) {
+        const emoji = document.getElementById("notification-emoji");
+        const title = document.getElementById("notification-title");
+        const message = document.getElementById("notification-message");
+        const content = banner.querySelector(".notification-content");
+
+        if (props.emoji && emoji) emoji.textContent = props.emoji;
+        if (props.title && title) title.textContent = props.title;
+        if (props.message && message) message.textContent = props.message;
+
+        // Cambiar el tipo de notificación si se especifica
+        if (props.type && content) {
+          content.className = "notification-content " + props.type;
+        }
+      },
+    };
+  });
+</script>

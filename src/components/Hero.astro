@@ -1,0 +1,93 @@
+---
+import Stroke from "@/components/ui/Stroke.astro";
+import { siteContent } from "@/Data/content";
+
+const { hero } = siteContent;
+---
+
+<img
+  class="planet"
+  src="/assets/images/tierra.webp"
+  alt="Tierra"
+  loading="eager"
+  fetchpriority="high"
+/>
+
+<section class="hero">
+  <img class="satelite" src="/assets/images/sat.webp" alt="" aria-hidden="true" />
+
+  <div class="hero__content">
+    <h1>{hero.title}</h1>
+    <p>
+      {hero.description}
+    </p>
+  </div>
+
+  <Stroke class="stroke" />
+</section>
+
+<style>
+  .hero {
+    position: relative;
+  }
+
+  .hero__content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .satelite {
+    position: absolute;
+    z-index: 1;
+    top: clamp(-7.75rem, -6.021rem + 7.379vh, -14.875rem);
+    right: clamp(0.625rem, -2.5rem + 13.333vw, 13.5rem);
+    width: clamp(15.625rem, 8.799rem + 29.126vw, 43.75rem);
+    height: auto;
+    pointer-events: none;
+  }
+
+  button {
+    margin-top: 16px;
+    transition:
+      border 0.3s ease,
+      box-shadow 0.3s ease;
+    position: relative;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 1.272rem + 3.107vw, 5rem);
+  }
+
+  p {
+    max-width: 50ch;
+    font-size: clamp(1rem, 0.97rem + 0.129vw, 1.125rem);
+  }
+
+  .stroke {
+    padding-block-start: 94px;
+  }
+
+  @media (max-width: 768px) {
+    .hero {
+      padding-top: 72px;
+    }
+    .satelite {
+      top: -58px;
+    }
+    .stroke {
+      padding-block-start: 72px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .hero {
+      padding-top: 84px;
+    }
+    .satelite {
+      top: -18px;
+    }
+    .stroke {
+      padding-block-start: 64px;
+    }
+  }
+</style>

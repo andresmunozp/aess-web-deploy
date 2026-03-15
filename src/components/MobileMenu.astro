@@ -1,0 +1,182 @@
+---
+import { siteContent } from "@/Data/content";
+
+const { header } = siteContent;
+---
+
+<button
+  id="menu-mobile-button"
+  class="button"
+  type="button"
+  aria-label={header.mobileMenu.openAriaLabel}
+>
+  <span class="line"></span>
+  <span class="line"></span>
+</button>
+<div id="mobile-menu" class="menu">
+  <nav class="nav">
+    <ul class="nav-list">
+      <li>
+        <a href="/" class="nav-link" data-id="nav-link">{header.mobileMenu.links.home}</a>
+      </li>
+      <li>
+        <a href="#about" class="nav-link" data-id="nav-link">{header.mobileMenu.links.about}</a>
+      </li>
+      <li>
+        <a href="/projects" class="nav-link" data-id="nav-link">{header.mobileMenu.links.projects}</a>
+      </li>
+      <li>
+        <a href="/blog" class="nav-link" data-id="nav-link">{header.mobileMenu.links.blog}</a>
+      </li>
+      <li>
+        <a href="/contact" class="nav-link" data-id="nav-link">{header.mobileMenu.links.contact}</a>
+      </li>
+    </ul>
+  </nav>
+</div>
+<div class="background-menu-mobile"></div>
+
+<script>
+  import { $, $$ } from "@/utils/dom-selector";
+  import { siteContent } from "@/Data/content";
+
+  const { header } = siteContent;
+
+  const $mobileButton = $("#menu-mobile-button")!;
+  const $mobileMenu = $("#mobile-menu")!;
+  const $navLinks = $$("[data-id='nav-link']");
+
+  $mobileButton.addEventListener("click", () => {
+    const currentState = $mobileButton.getAttribute("data-state");
+    const isOpen = currentState === "open";
+    const newState = isOpen ? "closed" : "open";
+    document.body.toggleAttribute("data-scroll-locked", !isOpen);
+    $mobileButton.ariaLabel = `${currentState === "open" ? header.mobileMenu.closeAriaLabel : header.mobileMenu.openAriaLabel}`;
+    $mobileButton.setAttribute("data-state", newState);
+    $mobileMenu.setAttribute("data-state", newState);
+  });
+
+  $navLinks.forEach((link) => {
+    link.addEventListener("click", () => {
+      $mobileButton.setAttribute("data-state", "closed");
+      $mobileMenu.setAttribute("data-state", "closed");
+      document.body.removeAttribute("data-scroll-locked");
+    });
+  });
+</script>
+
+<style>
+  .button {
+    --size: 32px;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    row-gap: 8px;
+    inline-size: var(--size);
+    block-size: var(--size);
+    margin-inline-start: auto;
+    background-color: transparent;
+    padding-inline: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .line {
+    inline-size: 80%;
+    block-size: 3px;
+    border-radius: 2px;
+    background-color: var(--primary-text-color);
+    transform-origin: 7px;
+    transition: transform 300ms cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  }
+
+  .button[data-state="open"] > .line:first-of-type {
+    transform: rotateZ(45deg) translate(2px);
+  }
+
+  .button[data-state="open"] > .line:last-of-type {
+    transform: rotateZ(-45deg) translate(2px);
+  }
+
+  .menu {
+    --items-padding: 12px;
+    position: fixed;
+    inset: var(--header-block-size) 0;
+    display: grid;
+    block-size: calc(100dvh - var(--header-block-size));
+    padding-inline: var(--items-padding);
+    overflow-y: auto;
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .background-menu-mobile {
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    background-color: var(--background-color);
+    z-index: -1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .menu[data-state="open"] {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .menu[data-state="open"] + .background-menu-mobile {
+    opacity: 1;
+  }
+
+  .nav-list {
+    padding-block: 24px 48px;
+    border-top: 1px solid var(--stroke-color);
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    block-size: 48px;
+    inline-size: 100%;
+    padding-inline: var(--items-padding);
+    color: var(--opaque-color);
+  }
+
+  .nav-link:hover {
+    color: var(--primary-text-color);
+    transition: color .15s;
+  }
+
+  .option-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    block-size: 42px;
+    padding-inline: var(--items-padding);
+  }
+
+  .option-label {
+    color: var(--color-text-secondary);
+  }
+
+  .menu-mobile-button {
+    border: red 1px solid !important;
+  }
+
+  @media screen and (min-width: 769px) {
+    .button,
+    .menu {
+      display: none;
+    }
+  }
+
+  /* Desactivar scroll cuando el menú móvil está abierto */
+  :global(body[data-scroll-locked]) {
+    overflow: hidden;
+    height: 100vh;
+    position: fixed;
+    width: 100%;
+  }
+</style>

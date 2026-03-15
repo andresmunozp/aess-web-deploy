@@ -1,0 +1,91 @@
+@font-face {
+    font-family: 'Orbitron';
+    src: url('/assets/fonts/Orbitron-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Orbitron';
+    src: url('/assets/fonts/Orbitron-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/assets/fonts/Inter_18pt-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/assets/fonts/Inter_18pt-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --background-color: #141414;
+    --primary-text-color: #F1ECEC;
+    --secondary-text-color: #E6E6E6;
+    --stroke-color: #AAAAAA;
+    --padding-page: clamp(1.313rem, 0.069rem + 5.307vw, 6.438rem);
+    --items-padding: clamp(1.313rem, 0.069rem + 5.307vw, 6.438rem);
+    --header-block-size: 60px;
+    --opaque-color: #b3b3b3;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+    scrollbar-color: var(--primary-text-color) transparent;
+}
+
+h1 {
+    background: linear-gradient(180deg, var(--primary-text-color), #727272);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: clamp(2rem, 1.272rem + 3.107vw, 5rem);
+    font-family: 'Orbitron';
+}
+
+h2 {
+    font-family: 'Orbitron';
+    font-size: clamp(1.75rem, 1.538rem + 0.906vw, 2.625rem);
+}
+
+section {
+    padding: var(--padding-page);
+    scroll-margin: 20px;
+}
+
+p {
+    color: var(--secondary-text-color);
+    font-size: clamp(1rem, 0.97rem + 0.129vw, 1.125rem);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+}
+
+th,
+td {
+    background-color: var(--background-color);
+    padding: 20px 16px;
+    border-bottom: 1px solid var(--stroke-color);
+    max-width: 70ch;
+}
+
+th {
+    text-align: left;
+}
+
+td {
+    vertical-align: top;
+}

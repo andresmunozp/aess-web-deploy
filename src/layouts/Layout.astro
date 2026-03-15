@@ -1,0 +1,46 @@
+---
+import "../styles/reset.css";
+import "../styles/globals.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  host: string;
+}
+
+const { title, description, host } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+
+    <meta name="description" content={description} />
+
+    <!-- <meta property="og:url" content={host} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={title} />
+    <meta name="og:image" content=`${host}/og.png` />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="es_CO" />
+
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content=`${host}/og.png` />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@aessunicauca" /> -->
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

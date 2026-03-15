@@ -1,0 +1,33 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Hero from "../components/Hero.astro";
+import About from "../components/About.astro";
+import Milestones from "../components/Milestones.astro";
+import Divisions from "../components/Divisions.astro";
+import JoinUs from "../components/JoinUs.astro";
+import Footer from "../components/Footer.astro";
+import Allies from "../components/Allies.astro";
+import ContactUs from "../components/ContactUs.astro";
+import Gallery from "../components/Gallery.astro";
+
+const title = "AESS Unicauca - Asociación de Estudiantes de la Universidad del Cauca";
+const description = "Bienvenidos a la página oficial de AESS Unicauca, donde promovemos la participación estudiantil y el desarrollo académico.";
+const HOST_URL = "http://localhost:4321";
+
+---
+
+<Layout title={title} description={description} host={HOST_URL}>
+  <Header />
+  <main>
+    <Hero />
+    <About />
+    <Milestones />
+    <Divisions />
+    <JoinUs />
+    <Gallery />
+    <Allies />
+    <ContactUs />
+  </main>
+  <Footer />
+</Layout>

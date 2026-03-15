@@ -1,0 +1,36 @@
+---
+import { allies } from "@/Data/allies";
+import AllyCard from "@/components/ui/AllyCard.astro";
+---
+
+<section>
+  <h2>Nuestros Aliados</h2>
+  <div class="allies-grid">
+    {
+      allies.map((ally) => (
+        <AllyCard
+          name={ally.name}
+          logoSrc={ally.logoSrc}
+          logoAlt={ally.logoAlt}
+          description={ally.description}
+          website={ally.website}
+        />
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  h2 {
+    margin-bottom: 48px;
+  }
+
+  .allies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: clamp(1.5rem, 1.136rem + 1.553vw, 3rem);
+    margin: 0 auto;
+  }
+
+
+</style>

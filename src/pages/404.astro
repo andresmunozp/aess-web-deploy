@@ -1,0 +1,113 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "Error 404 - Página no encontrada";
+const description = "Lo sentimos, la página que buscas no existe.";
+const HOST_URL = "http://localhost:4321";
+---
+
+<Layout title={title} description={description} host={HOST_URL}>
+  <Header />
+  <main>
+    <div class="error-container">
+      <div class="error-code">
+        <span class="digit">4</span>
+        <img
+          src="/assets/images/planeta-404.webp"
+          alt="Planeta 404"
+          class="planet-404"
+        />
+        <span class="digit">4</span>
+      </div>
+      <p>
+        Parece que la página que buscas no existe, regresa al inicio y sigue
+        explorando.
+      </p>
+      <a href="/" class="home-button">Ir al inicio</a>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--padding-page);
+  }
+
+  .error-container {
+    text-align: center;
+    max-width: 600px;
+  }
+
+  .error-code {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1rem, 2vw, 2rem);
+    margin-bottom: 2rem;
+  }
+
+  .digit {
+    font-family: "Orbitron", sans-serif;
+    font-size: clamp(8rem, 15vw, 12rem);
+    font-weight: 700;
+    background: linear-gradient(180deg, var(--primary-text-color), #727272);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .planet-404 {
+    width: clamp(6rem, 12vw, 10rem);
+    height: auto;
+    border-radius: 50%;
+    object-fit: cover;
+    animation: rotate 120s linear infinite;
+  }
+
+  @keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  p {
+    font-size: clamp(1.125rem, 1.5vw, 1.25rem);
+    color: var(--secondary-text-color);
+    line-height: 1.6;
+    margin: 2rem auto 0;
+    max-width: 35ch;
+  }
+
+  .home-button {
+    display: inline-block;
+    margin-top: 2rem;
+    padding: 12px 24px;
+    background-color: var(--primary-text-color);
+    color: var(--background-color);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    border: 1px solid var(--primary-text-color);
+  }
+
+  .home-button:hover {
+    background-color: transparent;
+    color: var(--primary-text-color);
+    box-shadow:
+      0 0 12px rgba(241, 236, 236, 0.4),
+      inset 0 0 12px rgba(241, 236, 236, 0.2);
+  }
+</style>

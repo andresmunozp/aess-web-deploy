@@ -1,0 +1,29 @@
+---
+import SocialLinks from "@/components/ui/SocialLinks.astro";
+import ContactForm from "@/components/ui/ContactForm.astro";
+import { siteContent } from "@/Data/content";
+
+const { contact } = siteContent;
+---
+
+<section id="contact">
+  <h2>{contact.title}</h2>
+  <p>{contact.subtitle}</p>
+
+  <ContactForm
+    formspreeEndpoint="https://formspree.io/f/xldwydkq"
+    className="contact-form"
+  />
+
+  <p>{contact.socialMediaText}</p>
+
+  <div class="social-media">
+    <SocialLinks />
+  </div>
+</section>
+
+<style>
+  .social-media {
+    margin-top: 16px;
+  }
+</style>

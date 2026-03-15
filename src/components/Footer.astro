@@ -1,0 +1,192 @@
+---
+import AessLogo from "@/components/icons/AessLogo.astro";
+import SocialLinks from "@/components/ui/SocialLinks.astro";
+import Stroke from "@/components/ui/Stroke.astro";
+import { siteContent } from "@/Data/content";
+
+const { footer } = siteContent;
+---
+
+<footer>
+  <div class="footer-content">
+    <div class="logo">
+      <AessLogo color="black" />
+      <p>
+        {footer.description}
+      </p>
+    </div>
+
+    <div class="footer-links">
+      <ul>
+        <li><strong>{footer.recommendedMaterial.title}</strong></li>
+        {footer.recommendedMaterial.links.map((link) => (
+          <li><a href={link.url} target="_blank" rel="noopener noreferrer">{link.text}</a></li>
+        ))}
+      </ul>
+
+      <ul>
+        <li><strong>{footer.interestLinks.title}</strong></li>
+        {footer.interestLinks.links.map((link) => (
+          <li><a href={link.url} target="_blank" rel="noopener noreferrer">{link.text}</a></li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="social-media">
+      <span>{footer.socialMediaText}</span>
+      <SocialLinks color="black" />
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <Stroke class="stroke" />
+
+    <div class="derechos">
+      <p>{footer.copyright}</p>
+      <p>
+        {footer.designedBy.text}
+        <a
+          class="dresan-link"
+          aria-label={footer.designedBy.linkAriaLabel}
+          href={footer.designedBy.linkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {footer.designedBy.linkText}
+        </a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  footer {
+    margin-top: 136px;
+    background-color: var(--primary-text-color);
+    border-radius: 16px 16px 0 0;
+    color: var(--background-color);
+    padding: 56px var(--padding-page);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .logo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .logo p {
+    max-width: 30ch;
+  }
+
+  .footer-content {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: clamp(0rem, -5rem + 10.417vw, 7.5rem);
+  }
+
+  .footer-links ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .footer-links li {
+    margin-bottom: 10px;
+  }
+
+  .footer-links a {
+    color: var(--background-color);
+  }
+
+  .footer-links a:hover {
+    text-decoration: underline dotted;
+    text-underline-offset: 4px;
+  }
+
+  span {
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .social-media {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .social-media {
+    font-weight: bold;
+  }
+
+  p {
+    color: var(--background-color);
+  }
+
+  .stroke {
+    margin-block: 32px;
+  }
+
+  .derechos {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .dresan-link {
+    position: relative;
+    inline-size: fit-content;
+    font-weight: 500;
+  }
+
+  .dresan-link::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    background-color: currentColor;
+    block-size: 1px;
+    inline-size: 100%;
+    mask-image: linear-gradient(to right, black 50%, transparent 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 250ms;
+    will-change: transform;
+  }
+
+  .dresan-link:hover::before {
+    transform: scaleX(1);
+  }
+
+  @media (max-width: 640px) {
+
+    .footer-content {
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .footer-links {
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .social-media {
+      align-items: flex-start;
+    }
+
+    .derechos {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .logo p {
+      max-width: 100%;
+    }
+
+  }
+
+</style>
