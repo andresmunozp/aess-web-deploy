@@ -1,4 +1,5 @@
 ---
+import { Image } from "astro:assets";
 import { milestones } from "@/Data/milestones";
 import StarIcon from "@/components/icons/StarIcon.astro";
 import GlobeIcon from "@/components/icons/GlobeIcon.astro";
@@ -51,12 +52,12 @@ const getYear = (milestone: string) => {
                 <div class="item-image">
                   <div class="image-wrapper">
                     <div class="image-overlay"></div>
-                    <img
+                    <Image
                       src={milestone.photoSrc}
                       alt={title}
                       loading="lazy"
-                      width="600"
-                      height="400"
+                      widths={[480, 720, 960]}
+                      sizes="(max-width: 900px) 100vw, 50vw"
                     />
                   </div>
                 </div>

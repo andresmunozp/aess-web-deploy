@@ -1,6 +1,8 @@
+import type { ImageMetadata } from "astro";
+
 export interface Milestone {
   id: string;
   milestone: string;
-  photoSrc: string;
+  photoSrc: ImageMetadata;
   keyMoment: string;
 }
