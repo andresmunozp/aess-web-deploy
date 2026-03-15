@@ -340,6 +340,16 @@ const firstPhoto = galleryPhotos[0];
       transition:
         border-color 0.3s ease,
         box-shadow 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-category-chip:focus {
+      outline: none;
+    }
+
+    .mobile-category-chip:focus-visible {
+      outline: 2px solid rgb(255 255 255 / 0.7);
+      outline-offset: 2px;
     }
 
     .mobile-category-chip:hover {
@@ -386,6 +396,16 @@ const firstPhoto = galleryPhotos[0];
       background: transparent;
       scroll-snap-align: center;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-slide:focus {
+      outline: none;
+    }
+
+    .mobile-slide:focus-visible {
+      outline: 2px solid rgb(255 255 255 / 0.7);
+      outline-offset: -0.2rem;
     }
 
     .mobile-slide img {
@@ -416,6 +436,16 @@ const firstPhoto = galleryPhotos[0];
       color: #f8fafc;
       backdrop-filter: blur(8px);
       transform: translateY(-50%);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-nav:focus {
+      outline: none;
+    }
+
+    .mobile-nav:focus-visible {
+      outline: 2px solid rgb(255 255 255 / 0.7);
+      outline-offset: 2px;
     }
 
     .mobile-nav-prev {
@@ -481,6 +511,16 @@ const firstPhoto = galleryPhotos[0];
         transform 0.2s ease,
         background-color 0.2s ease,
         width 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-dot:focus {
+      outline: none;
+    }
+
+    .mobile-dot:focus-visible {
+      outline: 2px solid rgb(255 255 255 / 0.7);
+      outline-offset: 3px;
     }
 
     .mobile-dot[data-active="true"] {
@@ -524,6 +564,16 @@ const firstPhoto = galleryPhotos[0];
       background: var(--background-color);
       color: #ffffff;
       backdrop-filter: blur(10px);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-lightbox-close:focus {
+      outline: none;
+    }
+
+    .mobile-lightbox-close:focus-visible {
+      outline: 2px solid rgb(255 255 255 / 0.7);
+      outline-offset: 2px;
     }
 
     .mobile-lightbox-media {
@@ -538,8 +588,6 @@ const firstPhoto = galleryPhotos[0];
       width: 100%;
       max-height: 100%;
       object-fit: contain;
-      border-radius: 0.75rem;
-      background: rgb(15 23 42 / 0.5);
     }
 
     .mobile-lightbox-meta {
