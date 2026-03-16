@@ -6,7 +6,7 @@ import MobileGallery from "@/components/MobileGallery.astro";
 const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.category))];
 ---
 
-<section class="gallery-section" id="gallery" data-gallery-root>
+<section class="gallery-section" id="gallery" data-gallery-root data-gallery-photos={JSON.stringify(galleryPhotos)}>
   <div class="gallery-header">
     <h2>Momentos de Nuestra Organizacion</h2>
     <p>
@@ -52,8 +52,6 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
               class="main-slide"
               data-main-slide
               data-index={index}
-              data-current={index === 0 ? "true" : "false"}
-              hidden={index !== 0}
             >
               <Image
                 data-slide-image
@@ -117,28 +115,39 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
   </div>
 </section>
 
-<script define:vars={{ galleryPhotos }}>
+<script>
+  import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel";
+
   const galleryRoot = document.querySelector("[data-gallery-root]");
+  const galleryPhotos = JSON.parse(galleryRoot?.getAttribute("data-gallery-photos") || "[]") as Array<{ category: string; title: string; date: string }>;
 
   if (galleryRoot && galleryPhotos.length > 0) {
+    const mainViewport = galleryRoot.querySelector("[data-gallery-panel]");
     const mainTrack = galleryRoot.querySelector("[data-main-track]");
-    const mainSlides = galleryRoot.querySelectorAll("[data-main-slide]");
-    const categoryButtons = galleryRoot.querySelectorAll("[data-category-button]");
+    const mainSlides = Array.from(galleryRoot.querySelectorAll<HTMLElement>("[data-main-slide]"));
+    const categoryButtons = Array.from(galleryRoot.querySelectorAll<HTMLButtonElement>("[data-category-button]"));
     const galleryPanel = galleryRoot.querySelector("[data-gallery-panel]");
     const thumbnailTrack = galleryRoot.querySelector("[data-thumbnail-track]");
-    const thumbnailButtons = galleryRoot.querySelectorAll("[data-thumbnail]");
-    const controlButtons = galleryRoot.querySelectorAll("[data-action]");
+    const thumbnailButtons = Array.from(galleryRoot.querySelectorAll<HTMLButtonElement>("[data-thumbnail]"));
+    const controlButtons = Array.from(galleryRoot.querySelectorAll<HTMLButtonElement>("[data-action]"));
     const emptyState = galleryRoot.querySelector("[data-empty-state]");
 
-    const allIndexes = galleryPhotos.map((_, index) => index);
+    const allIndexes = galleryPhotos.map((_, index: number) => index);
+    const slidesByIndex = mainSlides.reduce<Map<number, HTMLElement>>((map, slide) => {
+      const index = Number(slide.getAttribute("data-index"));
+      if (!Number.isNaN(index)) {
+        map.set(index, slide);
+      }
+      return map;
+    }, new Map<number, HTMLElement>());
 
     let activeCategory = "Todas";
     let visibleIndexes = [...allIndexes];
     let activeIndex = 0;
-    let isAnimating = false;
     let hasHydrated = false;
+    let embla: EmblaCarouselType | null = null;
 
-    const normalized = (index, length) => {
+    const normalized = (index: number, length: number) => {
       if (length === 0) {
         return 0;
       }
@@ -174,73 +183,111 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
       });
     };
 
-    const renderSlides = (shouldScrollThumbnail = false) => {
+    const scrollActiveThumbnailIntoView = (behavior: ScrollBehavior = "smooth") => {
+      if (!(thumbnailTrack instanceof HTMLElement)) {
+        return;
+      }
+
+      const activeThumbnail = thumbnailTrack.querySelector('[data-active="true"]');
+      if (!(activeThumbnail instanceof HTMLElement)) {
+        return;
+      }
+
+      activeThumbnail.scrollIntoView({
+        behavior,
+        inline: "center",
+        block: "nearest",
+      });
+    };
+
+    const syncTrackSlides = () => {
       if (!(mainTrack instanceof HTMLElement)) {
         return;
       }
 
+      while (mainTrack.firstChild) {
+        mainTrack.removeChild(mainTrack.firstChild);
+      }
+
+      visibleIndexes.forEach((index) => {
+        const slide = slidesByIndex.get(index);
+        if (slide) {
+          mainTrack.appendChild(slide);
+        }
+      });
+    };
+
+    const reInitEmbla = () => {
+      if (!(mainViewport instanceof HTMLElement) || !(mainTrack instanceof HTMLElement)) {
+        return;
+      }
+
+      if (embla) {
+        embla.destroy();
+      }
+
+      embla = EmblaCarousel(mainViewport, {
+        loop: visibleIndexes.length > 1,
+        align: "start",
+      });
+
+      embla.on("select", () => {
+        activeIndex = embla ? embla.selectedScrollSnap() : 0;
+        updateThumbnailState();
+        scrollActiveThumbnailIntoView("smooth");
+      });
+
+      embla.scrollTo(activeIndex, true);
+      updateThumbnailState();
+      scrollActiveThumbnailIntoView("auto");
+    };
+
+    const renderSlides = (shouldScrollThumbnail = false) => {
       if (visibleIndexes.length === 0) {
-        mainSlides.forEach((slide) => {
-          if (slide instanceof HTMLElement) {
-            slide.hidden = true;
-            slide.dataset.current = "false";
+        if (embla) {
+          embla.destroy();
+          embla = null;
+        }
+        if (mainTrack instanceof HTMLElement) {
+          while (mainTrack.firstChild) {
+            mainTrack.removeChild(mainTrack.firstChild);
           }
-        });
+        }
         updateThumbnailState();
         return;
       }
 
-      const activeOriginalIndex = visibleIndexes[activeIndex];
-      mainSlides.forEach((slide) => {
-        if (!(slide instanceof HTMLElement)) {
-          return;
-        }
-
-        const originalIndex = Number(slide.getAttribute("data-index"));
-        const isVisible = visibleIndexes.includes(originalIndex);
-        const isCurrent = isVisible && originalIndex === activeOriginalIndex;
-
-        slide.hidden = !isCurrent;
-        slide.dataset.current = isCurrent ? "true" : "false";
-      });
-
-      mainTrack.style.transform = "none";
-      mainTrack.style.transition = "none";
-
-      updateThumbnailState();
+      syncTrackSlides();
+      reInitEmbla();
 
       if (shouldScrollThumbnail) {
-        const activeThumbnail = thumbnailTrack?.querySelector('[data-active="true"]');
-        if (activeThumbnail instanceof HTMLElement) {
-          requestAnimationFrame(() => {
-            activeThumbnail.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-          });
-        }
+        requestAnimationFrame(() => {
+          scrollActiveThumbnailIntoView("smooth");
+        });
       }
     };
 
-    const stepSlide = (direction) => {
-      if (isAnimating || visibleIndexes.length <= 1) {
+    const stepSlide = (direction: "next" | "prev") => {
+      if (!embla || visibleIndexes.length <= 1) {
         return;
       }
 
-      isAnimating = true;
-      const delta = direction === "next" ? 1 : -1;
-      activeIndex = normalized(activeIndex + delta, visibleIndexes.length);
-      renderSlides(true);
+      if (direction === "next") {
+        embla.scrollNext();
+      } else {
+        embla.scrollPrev();
+      }
 
-      window.setTimeout(() => {
-        isAnimating = false;
-      }, 180);
+      activeIndex = embla.selectedScrollSnap();
+      updateThumbnailState();
     };
 
-    const setCategory = (category) => {
+    const setCategory = (category: string) => {
       activeCategory = category;
       visibleIndexes = getVisibleIndexes();
       activeIndex = 0;
-      isAnimating = false;
 
-      let activeCategoryButton = null;
+      let activeButtonId: string | null = null;
       categoryButtons.forEach((button) => {
         const isActive = button.getAttribute("data-category") === category;
         button.setAttribute("data-active", String(isActive));
@@ -248,12 +295,11 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
         button.setAttribute("tabindex", isActive ? "0" : "-1");
 
         if (isActive) {
-          activeCategoryButton = button;
+          activeButtonId = button.getAttribute("id");
         }
       });
 
-      if (galleryPanel instanceof HTMLElement && activeCategoryButton instanceof HTMLElement) {
-        const activeButtonId = activeCategoryButton.getAttribute("id");
+      if (galleryPanel instanceof HTMLElement && activeButtonId) {
         if (activeButtonId) {
           galleryPanel.setAttribute("aria-labelledby", activeButtonId);
         }
@@ -262,7 +308,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
       renderSlides(hasHydrated);
     };
 
-    galleryRoot.addEventListener("click", (event) => {
+    galleryRoot.addEventListener("click", (event: Event) => {
       const target = event.target;
 
       if (!(target instanceof HTMLElement)) {
@@ -284,7 +330,11 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
 
         if (!Number.isNaN(originalIndex) && nextActiveIndex >= 0) {
           activeIndex = nextActiveIndex;
-          renderSlides(true);
+          if (embla) {
+            embla.scrollTo(activeIndex);
+          }
+          updateThumbnailState();
+          scrollActiveThumbnailIntoView("smooth");
         }
       }
 
@@ -301,7 +351,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
     });
 
     controlButtons.forEach((button) => {
-      button.addEventListener("keydown", (event) => {
+      button.addEventListener("keydown", (event: KeyboardEvent) => {
         if (event.key !== "Enter" && event.key !== " ") {
           return;
         }
@@ -312,7 +362,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
     });
 
     categoryButtons.forEach((button, index) => {
-      button.addEventListener("keydown", (event) => {
+      button.addEventListener("keydown", (event: KeyboardEvent) => {
         if (!(event.currentTarget instanceof HTMLElement)) {
           return;
         }
@@ -346,7 +396,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
       });
     });
 
-    window.addEventListener("keydown", (event) => {
+    window.addEventListener("keydown", (event: KeyboardEvent) => {
       if (visibleIndexes.length === 0) {
         return;
       }
@@ -444,19 +494,16 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
   }
 
   .main-photo-track {
-    display: block;
+    display: flex;
     width: 100%;
     height: 100%;
   }
 
   .main-slide {
     position: relative;
-    width: 100%;
+    flex: 0 0 100%;
+    min-width: 0;
     height: 100%;
-    display: none;
-  }
-
-  .main-slide[data-current="true"] {
     display: block;
   }
 

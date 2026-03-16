@@ -6,7 +6,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((p) => p.category))];
 const firstPhoto = galleryPhotos[0];
 ---
 
-<div class="mobile-gallery" data-mobile-gallery-root aria-label="Galeria movil">
+<div class="mobile-gallery" data-mobile-gallery-root data-gallery-photos={JSON.stringify(galleryPhotos)} aria-label="Galeria movil">
   <div class="mobile-category-filter" role="tablist" aria-label="Filtrar fotos por categoria">
     {
       categories.map((category) => (
@@ -128,28 +128,39 @@ const firstPhoto = galleryPhotos[0];
   }
 </div>
 
-<script define:vars={{ galleryPhotos }}>
+<script>
+  import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel";
+
   const mobileGalleryRoot = document.querySelector("[data-mobile-gallery-root]");
+  const galleryPhotos = JSON.parse(mobileGalleryRoot?.getAttribute("data-gallery-photos") || "[]") as Array<{ category: string; title: string; date: string }>;
 
   if (mobileGalleryRoot instanceof HTMLElement && galleryPhotos.length > 0) {
+    const mobileViewport = mobileGalleryRoot.querySelector(".mobile-gallery-frame");
     const mobileTrack = mobileGalleryRoot.querySelector("[data-mobile-track]");
-    const mobileSlides = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-slide]"));
-    const mobileDots = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-dot]"));
-    const mobileNavButtons = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-nav]"));
-    const filterButtons = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-category-btn]"));
+    const mobileSlides = Array.from(mobileGalleryRoot.querySelectorAll<HTMLElement>("[data-mobile-slide]"));
+    const mobileDots = Array.from(mobileGalleryRoot.querySelectorAll<HTMLButtonElement>("[data-mobile-dot]"));
+    const mobileNavButtons = Array.from(mobileGalleryRoot.querySelectorAll<HTMLButtonElement>("[data-mobile-nav]"));
+    const filterButtons = Array.from(mobileGalleryRoot.querySelectorAll<HTMLButtonElement>("[data-mobile-category-btn]"));
     const categoryElement = mobileGalleryRoot.querySelector("[data-mobile-category]");
     const titleElement = mobileGalleryRoot.querySelector("[data-mobile-title]");
     const dateElement = mobileGalleryRoot.querySelector("[data-mobile-date]");
-    const lightboxes = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-lightbox]"));
-    const closeButtons = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-close]"));
+    const lightboxes = Array.from(mobileGalleryRoot.querySelectorAll<HTMLDialogElement>("[data-mobile-lightbox]"));
+    const closeButtons = Array.from(mobileGalleryRoot.querySelectorAll<HTMLButtonElement>("[data-mobile-close]"));
+    const slidesByIndex = mobileSlides.reduce<Map<number, HTMLElement>>((map, slide) => {
+      const index = Number(slide.getAttribute("data-index"));
+      if (!Number.isNaN(index)) {
+        map.set(index, slide);
+      }
+      return map;
+    }, new Map<number, HTMLElement>());
 
     let activeIndex = 0;  // position within visible set
-    let visibleIndexes = galleryPhotos.map((_, i) => i);
-    let scrollFrame = 0;
+    let visibleIndexes = galleryPhotos.map((_, i: number) => i);
+    let embla: EmblaCarouselType | null = null;
 
-    const getPhoto = (visiblePos) => galleryPhotos[visibleIndexes[visiblePos]];
+    const getPhoto = (visiblePos: number) => galleryPhotos[visibleIndexes[visiblePos]];
 
-    const setActiveMeta = (visiblePos) => {
+    const setActiveMeta = (visiblePos: number) => {
       const photo = getPhoto(visiblePos);
       if (!photo) return;
 
@@ -166,27 +177,68 @@ const firstPhoto = galleryPhotos[0];
       });
     };
 
-    const scrollToIndex = (index, behavior = "smooth") => {
-      if (!(mobileTrack instanceof HTMLElement)) return;
-      const clamped = Math.max(0, Math.min(index, visibleIndexes.length - 1));
-      mobileTrack.scrollTo({ left: mobileTrack.clientWidth * clamped, behavior });
+    const scrollToIndex = (index: number, behavior: ScrollBehavior = "smooth") => {
+      if (!embla) {
+        return;
+      }
+
+      embla.scrollTo(index, behavior === "auto");
     };
 
-    const syncActiveIndex = () => {
-      if (!(mobileTrack instanceof HTMLElement)) return;
-      const next = Math.max(
-        0,
-        Math.min(
-          Math.round(mobileTrack.scrollLeft / Math.max(mobileTrack.clientWidth, 1)),
-          visibleIndexes.length - 1,
-        ),
-      );
-      if (next === activeIndex) return;
-      activeIndex = next;
+    const moveToIndex = (nextIndex: number, direction = 1) => {
+      const length = visibleIndexes.length;
+      if (length === 0) {
+        return;
+      }
+
+      const normalizedNext = (nextIndex + length) % length;
+
+      activeIndex = normalizedNext;
+      setActiveMeta(activeIndex);
+      scrollToIndex(activeIndex, "smooth");
+    };
+
+    const syncTrackSlides = () => {
+      if (!(mobileTrack instanceof HTMLElement)) {
+        return;
+      }
+
+      while (mobileTrack.firstChild) {
+        mobileTrack.removeChild(mobileTrack.firstChild);
+      }
+
+      visibleIndexes.forEach((index) => {
+        const slide = slidesByIndex.get(index);
+        if (slide) {
+          mobileTrack.appendChild(slide);
+        }
+      });
+    };
+
+    const reInitEmbla = () => {
+      if (!(mobileViewport instanceof HTMLElement) || !(mobileTrack instanceof HTMLElement)) {
+        return;
+      }
+
+      if (embla) {
+        embla.destroy();
+      }
+
+      embla = EmblaCarousel(mobileViewport, {
+        loop: visibleIndexes.length > 1,
+        align: "start",
+      });
+
+      embla.on("select", () => {
+        activeIndex = embla ? embla.selectedScrollSnap() : 0;
+        setActiveMeta(activeIndex);
+      });
+
+      embla.scrollTo(activeIndex, true);
       setActiveMeta(activeIndex);
     };
 
-    const openLightbox = (visiblePos) => {
+    const openLightbox = (visiblePos: number) => {
       const originalIndex = visibleIndexes[visiblePos];
       const lightbox = mobileGalleryRoot.querySelector(`[data-mobile-lightbox][data-lightbox-index="${originalIndex}"]`);
       if (!(lightbox instanceof HTMLDialogElement)) return;
@@ -195,19 +247,19 @@ const firstPhoto = galleryPhotos[0];
       document.documentElement.classList.add("mobile-lightbox-open");
     };
 
-    const closeLightbox = (targetLightbox) => {
+    const closeLightbox = (targetLightbox: Element | null) => {
       const lightbox = targetLightbox;
       if (!(lightbox instanceof HTMLDialogElement) || !lightbox.open) return;
       lightbox.close();
       document.documentElement.classList.remove("mobile-lightbox-open");
     };
 
-    const setCategory = (category) => {
-      const allIndexes = galleryPhotos.map((_, i) => i);
+    const setCategory = (category: string) => {
+      const allIndexes = galleryPhotos.map((_, i: number) => i);
       visibleIndexes =
         category === "Todas"
           ? allIndexes
-          : allIndexes.filter((i) => galleryPhotos[i].category === category);
+          : allIndexes.filter((i: number) => galleryPhotos[i].category === category);
 
       filterButtons.forEach((btn) => {
         if (!(btn instanceof HTMLElement)) return;
@@ -230,28 +282,39 @@ const firstPhoto = galleryPhotos[0];
       });
 
       activeIndex = 0;
-      if (mobileTrack instanceof HTMLElement) {
-        mobileTrack.scrollTo({ left: 0, behavior: "instant" });
+
+      if (visibleIndexes.length > 0) {
+        syncTrackSlides();
+        reInitEmbla();
+      } else {
+        if (embla) {
+          embla.destroy();
+          embla = null;
+        }
+
+        if (mobileTrack instanceof HTMLElement) {
+          while (mobileTrack.firstChild) {
+            mobileTrack.removeChild(mobileTrack.firstChild);
+          }
+        }
       }
-
-      if (visibleIndexes.length > 0) setActiveMeta(0);
     };
-
-    mobileTrack?.addEventListener(
-      "scroll",
-      () => {
-        window.cancelAnimationFrame(scrollFrame);
-        scrollFrame = window.requestAnimationFrame(syncActiveIndex);
-      },
-      { passive: true },
-    );
 
     mobileNavButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        if (!embla) {
+          return;
+        }
+
         const direction = button.getAttribute("data-mobile-nav") === "next" ? 1 : -1;
-        activeIndex = (activeIndex + direction + visibleIndexes.length) % visibleIndexes.length;
+        if (direction === 1) {
+          embla.scrollNext();
+        } else {
+          embla.scrollPrev();
+        }
+
+        activeIndex = embla.selectedScrollSnap();
         setActiveMeta(activeIndex);
-        scrollToIndex(activeIndex);
       });
     });
 
@@ -260,9 +323,7 @@ const firstPhoto = galleryPhotos[0];
         const originalIndex = Number(dot.getAttribute("data-index"));
         const visiblePos = visibleIndexes.indexOf(originalIndex);
         if (visiblePos < 0) return;
-        activeIndex = visiblePos;
-        setActiveMeta(activeIndex);
-        scrollToIndex(activeIndex);
+        moveToIndex(visiblePos, visiblePos >= activeIndex ? 1 : -1);
       });
     });
 
@@ -283,7 +344,7 @@ const firstPhoto = galleryPhotos[0];
         setCategory(category);
       });
 
-      button.addEventListener("keydown", (event) => {
+      button.addEventListener("keydown", (event: KeyboardEvent) => {
         const index = filterButtons.indexOf(button);
         let targetIndex = index;
         if (event.key === "ArrowRight") targetIndex = (index + 1) % filterButtons.length;
@@ -320,10 +381,19 @@ const firstPhoto = galleryPhotos[0];
     });
 
     window.addEventListener("resize", () => {
-      scrollToIndex(activeIndex, "auto");
+      if (!embla) {
+        return;
+      }
+
+      embla.reInit({
+        loop: visibleIndexes.length > 1,
+        align: "start",
+      });
+      embla.scrollTo(activeIndex, true);
     });
 
-    setActiveMeta(activeIndex);
+    syncTrackSlides();
+    reInitEmbla();
   }
 </script>
 
@@ -390,13 +460,9 @@ const firstPhoto = galleryPhotos[0];
     }
 
     .mobile-gallery-track {
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: 100%;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      display: flex;
+      height: 100%;
+      touch-action: pan-y pinch-zoom;
     }
 
     .mobile-gallery-track::-webkit-scrollbar {
@@ -405,12 +471,12 @@ const firstPhoto = galleryPhotos[0];
 
     .mobile-slide {
       position: relative;
-      width: 100%;
+      flex: 0 0 100%;
+      min-width: 0;
       min-height: clamp(18rem, 62vw, 25rem);
       padding: 0;
       border: 0;
       background: transparent;
-      scroll-snap-align: center;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
