@@ -41,8 +41,8 @@ const firstPhoto = galleryPhotos[0];
               alt={photo.title}
               loading={index === 0 ? "eager" : "lazy"}
               fetchpriority={index === 0 ? "high" : "auto"}
-              widths={[640, 960, 1280]}
-              sizes="100vw"
+              widths={[375, 768, 1024]}
+              sizes="(max-width: 375px) 100vw, 90vw"
             />
             <span class="mobile-slide-overlay" aria-hidden="true"></span>
           </button>

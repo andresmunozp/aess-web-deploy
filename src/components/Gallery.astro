@@ -4,22 +4,6 @@ import { galleryPhotos } from "@/Data/gallery";
 import MobileGallery from "@/components/MobileGallery.astro";
 
 const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.category))];
-const normalizeIndex = (index: number) => {
-  if (galleryPhotos.length === 0) {
-    return 0;
-  }
-
-  return (index + galleryPhotos.length) % galleryPhotos.length;
-};
-
-const initialSlides =
-  galleryPhotos.length === 0
-    ? []
-    : [
-        galleryPhotos[normalizeIndex(-1)],
-        galleryPhotos[normalizeIndex(0)],
-        galleryPhotos[normalizeIndex(1)],
-      ];
 ---
 
 <section class="gallery-section" id="gallery" data-gallery-root>
@@ -63,22 +47,20 @@ const initialSlides =
     >
       <div class="main-photo-track" data-main-track>
         {
-          initialSlides.map((photo, index) => (
+          galleryPhotos.map((photo, index) => (
             <article
               class="main-slide"
               data-main-slide
-              data-window-pos={index - 1}
-              data-current={index === 1 ? "true" : "false"}
-              hidden={index !== 1}
+              data-index={index}
+              data-current={index === 0 ? "true" : "false"}
+              hidden={index !== 0}
             >
               <Image
                 data-slide-image
                 src={photo.image}
                 alt={photo.title}
-                loading={index === 1 ? "eager" : "lazy"}
-                fetchpriority={index === 1 ? "high" : "auto"}
-                widths={[640, 960, 1280]}
-                sizes="(max-width: 768px) 100vw, 90vw"
+                loading={index === 0 ? "eager" : "lazy"}
+                fetchpriority={index === 0 ? "high" : "auto"}
               />
               <div class="main-photo-overlay"></div>
 
@@ -149,8 +131,6 @@ const initialSlides =
     const emptyState = galleryRoot.querySelector("[data-empty-state]");
 
     const allIndexes = galleryPhotos.map((_, index) => index);
-    const preloadedUrls = new Set();
-    const imageLoadPromises = new Map();
 
     let activeCategory = "Todas";
     let visibleIndexes = [...allIndexes];
@@ -172,113 +152,6 @@ const initialSlides =
       }
 
       return allIndexes.filter((index) => galleryPhotos[index].category === activeCategory);
-    };
-
-    const getPhotoAtOffset = (offset) => {
-      const length = visibleIndexes.length;
-      const targetVisibleIndex = normalized(activeIndex + offset, length);
-      const originalIndex = visibleIndexes[targetVisibleIndex];
-      return galleryPhotos[originalIndex];
-    };
-
-    const preloadImage = (url) => {
-      if (!url) {
-        return Promise.resolve();
-      }
-
-      const existingPromise = imageLoadPromises.get(url);
-      if (existingPromise) {
-        return existingPromise;
-      }
-
-      const imagePromise = new Promise((resolve) => {
-        const image = new Image();
-        image.decoding = "async";
-
-        image.onload = () => {
-          preloadedUrls.add(url);
-          resolve();
-        };
-
-        image.onerror = () => {
-          resolve();
-        };
-
-        image.src = url;
-      });
-
-      imageLoadPromises.set(url, imagePromise);
-      return imagePromise;
-    };
-
-    const setSlideContent = (slide, photo) => {
-      if (!(slide instanceof HTMLElement) || !photo) {
-        return;
-      }
-
-      const image = slide.querySelector("[data-slide-image]");
-      const title = slide.querySelector("[data-slide-title]");
-      const category = slide.querySelector("[data-slide-category]");
-      const date = slide.querySelector("[data-slide-date]");
-
-      if (image instanceof HTMLImageElement) {
-        const currentSrc = image.getAttribute("src");
-        image.dataset.requestedSrc = photo.image.src;
-
-        if (currentSrc !== photo.image.src) {
-          image.style.opacity = "0";
-
-          preloadImage(photo.image.src).then(() => {
-            if (image.dataset.requestedSrc !== photo.image.src) {
-              return;
-            }
-
-            image.removeAttribute("srcset");
-            image.removeAttribute("sizes");
-            image.src = photo.image.src;
-            image.alt = photo.title;
-
-            requestAnimationFrame(() => {
-              if (image.dataset.requestedSrc === photo.image.src) {
-                image.style.opacity = "1";
-              }
-            });
-          });
-        } else {
-          image.style.opacity = "1";
-        }
-
-        image.alt = photo.title;
-      }
-
-      if (title instanceof HTMLElement) {
-        title.textContent = photo.title;
-      }
-
-      if (category instanceof HTMLElement) {
-        category.textContent = photo.category;
-      }
-
-      if (date instanceof HTMLElement) {
-        date.textContent = photo.date;
-      }
-    };
-
-    const preloadNeighbors = () => {
-      if (visibleIndexes.length < 2) {
-        return;
-      }
-
-      const previousPhoto = getPhotoAtOffset(-1);
-      const nextPhoto = getPhotoAtOffset(1);
-
-      [previousPhoto, nextPhoto].forEach((photo) => {
-        if (!photo) {
-          return;
-        }
-
-        preloadImage(photo.image.src);
-      });
     };
 
     const updateThumbnailState = () => {
@@ -310,36 +183,29 @@ const initialSlides =
         mainSlides.forEach((slide) => {
           if (slide instanceof HTMLElement) {
             slide.hidden = true;
+            slide.dataset.current = "false";
           }
         });
         updateThumbnailState();
         return;
       }
 
-      const previousSlide = galleryRoot.querySelector('[data-main-slide][data-window-pos="-1"]');
-      const currentSlide = galleryRoot.querySelector('[data-main-slide][data-window-pos="0"]');
-      const nextSlide = galleryRoot.querySelector('[data-main-slide][data-window-pos="1"]');
-      const currentPhoto = getPhotoAtOffset(0);
+      const activeOriginalIndex = visibleIndexes[activeIndex];
+      mainSlides.forEach((slide) => {
+        if (!(slide instanceof HTMLElement)) {
+          return;
+        }
 
-      if (previousSlide instanceof HTMLElement) {
-        previousSlide.hidden = true;
-        previousSlide.dataset.current = "false";
-      }
+        const originalIndex = Number(slide.getAttribute("data-index"));
+        const isVisible = visibleIndexes.includes(originalIndex);
+        const isCurrent = isVisible && originalIndex === activeOriginalIndex;
 
-      if (currentSlide instanceof HTMLElement) {
-        currentSlide.hidden = false;
-        currentSlide.dataset.current = "true";
-        setSlideContent(currentSlide, currentPhoto);
-      }
-
-      if (nextSlide instanceof HTMLElement) {
-        nextSlide.hidden = true;
-        nextSlide.dataset.current = "false";
-      }
+        slide.hidden = !isCurrent;
+        slide.dataset.current = isCurrent ? "true" : "false";
+      });
 
       mainTrack.style.transform = "none";
       mainTrack.style.transition = "none";
-      preloadNeighbors();
 
       updateThumbnailState();
 
