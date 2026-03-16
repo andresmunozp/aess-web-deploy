@@ -240,7 +240,6 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
 
       embla.scrollTo(activeIndex, true);
       updateThumbnailState();
-      scrollActiveThumbnailIntoView("auto");
     };
 
     const renderSlides = (shouldScrollThumbnail = false) => {

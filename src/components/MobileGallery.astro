@@ -61,9 +61,11 @@ const firstPhoto = galleryPhotos[0];
     firstPhoto && (
       <>
         <div class="mobile-gallery-meta">
-          <span class="mobile-meta-category" data-mobile-category>{firstPhoto.category}</span>
+          <div class="mobile-gallery-meta-content">
+            <span class="mobile-meta-category" data-mobile-category>{firstPhoto.category}</span>
+            <p data-mobile-date>{firstPhoto.date}</p>
+          </div>
           <h3 data-mobile-title>{firstPhoto.title}</h3>
-          <p data-mobile-date>{firstPhoto.date}</p>
         </div>
 
         <div class="mobile-gallery-footer">
@@ -114,8 +116,8 @@ const firstPhoto = galleryPhotos[0];
 
                 <div class="mobile-lightbox-meta">
                   <span class="mobile-meta-category">{photo.category}</span>
-                  <h3>{photo.title}</h3>
                   <p>{photo.date}</p>
+                  <h3>{photo.title}</h3>
                 </div>
               </div>
             </dialog>
@@ -414,6 +416,12 @@ const firstPhoto = galleryPhotos[0];
       justify-content: center;
     }
 
+    .mobile-gallery-meta-content{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      align-content: center;
+    }
     .mobile-category-chip {
       font-weight: 500;
       border: 1px solid var(--stroke-color);
@@ -539,11 +547,12 @@ const firstPhoto = galleryPhotos[0];
 
     .mobile-gallery-meta {
       display: grid;
-      gap: 0.45rem;
+      gap: 16px;
     }
 
     .mobile-meta-category {
       width: fit-content;
+      align-content: center;
       padding: 0.36rem 0.72rem;
       border-radius: 999px;
       background: #c8342d;
@@ -560,6 +569,7 @@ const firstPhoto = galleryPhotos[0];
       font-family: "Orbitron", sans-serif;
       font-size: clamp(1.1rem, 0.92rem + 0.9vw, 1.45rem);
       color: var(--primary-text-color);
+      height: 2lh;
     }
 
     .mobile-gallery-meta p,
