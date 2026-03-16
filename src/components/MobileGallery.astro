@@ -85,28 +85,44 @@ const firstPhoto = galleryPhotos[0];
           </div>
         </div>
 
-        <dialog class="mobile-lightbox" data-mobile-lightbox aria-label="Vista ampliada de la imagen">
-          <div class="mobile-lightbox-shell">
-            <button class="mobile-lightbox-close" type="button" data-mobile-close aria-label="Cerrar imagen ampliada">
-              &#10005;
-            </button>
+        {
+          galleryPhotos.map((photo, index) => (
+            <dialog
+              class="mobile-lightbox"
+              data-mobile-lightbox
+              data-lightbox-index={index}
+              aria-label={`Vista ampliada: ${photo.title}`}
+            >
+              <div class="mobile-lightbox-shell">
+                <button
+                  class="mobile-lightbox-close"
+                  type="button"
+                  data-mobile-close
+                  data-lightbox-index={index}
+                  aria-label="Cerrar imagen ampliada"
+                >
+                  &#10005;
+                </button>
 
-            <div class="mobile-lightbox-media">
-              <img
-                src={firstPhoto.image.src}
-                alt={firstPhoto.title}
-                data-lightbox-image
-                loading="eager"
-              />
-            </div>
+                <div class="mobile-lightbox-media">
+                  <Image
+                    src={photo.image}
+                    alt={photo.title}
+                    loading="lazy"
+                    widths={[720, 1080, 1440]}
+                    sizes="100vw"
+                  />
+                </div>
 
-            <div class="mobile-lightbox-meta">
-              <span class="mobile-meta-category" data-lightbox-category>{firstPhoto.category}</span>
-              <h3 data-lightbox-title>{firstPhoto.title}</h3>
-              <p data-lightbox-date>{firstPhoto.date}</p>
-            </div>
-          </div>
-        </dialog>
+                <div class="mobile-lightbox-meta">
+                  <span class="mobile-meta-category">{photo.category}</span>
+                  <h3>{photo.title}</h3>
+                  <p>{photo.date}</p>
+                </div>
+              </div>
+            </dialog>
+          ))
+        }
       </>
     )
   }
@@ -124,12 +140,8 @@ const firstPhoto = galleryPhotos[0];
     const categoryElement = mobileGalleryRoot.querySelector("[data-mobile-category]");
     const titleElement = mobileGalleryRoot.querySelector("[data-mobile-title]");
     const dateElement = mobileGalleryRoot.querySelector("[data-mobile-date]");
-    const lightbox = mobileGalleryRoot.querySelector("[data-mobile-lightbox]");
-    const lightboxImage = mobileGalleryRoot.querySelector("[data-lightbox-image]");
-    const lightboxCategory = mobileGalleryRoot.querySelector("[data-lightbox-category]");
-    const lightboxTitle = mobileGalleryRoot.querySelector("[data-lightbox-title]");
-    const lightboxDate = mobileGalleryRoot.querySelector("[data-lightbox-date]");
-    const closeButton = mobileGalleryRoot.querySelector("[data-mobile-close]");
+    const lightboxes = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-lightbox]"));
+    const closeButtons = Array.from(mobileGalleryRoot.querySelectorAll("[data-mobile-close]"));
 
     let activeIndex = 0;  // position within visible set
     let visibleIndexes = galleryPhotos.map((_, i) => i);
@@ -175,22 +187,16 @@ const firstPhoto = galleryPhotos[0];
     };
 
     const openLightbox = (visiblePos) => {
-      const photo = getPhoto(visiblePos);
-      if (!photo || !(lightbox instanceof HTMLDialogElement)) return;
-
-      if (lightboxImage instanceof HTMLImageElement) {
-        lightboxImage.src = photo.image.src;
-        lightboxImage.alt = photo.title;
-      }
-      if (lightboxCategory instanceof HTMLElement) lightboxCategory.textContent = photo.category;
-      if (lightboxTitle instanceof HTMLElement) lightboxTitle.textContent = photo.title;
-      if (lightboxDate instanceof HTMLElement) lightboxDate.textContent = photo.date;
+      const originalIndex = visibleIndexes[visiblePos];
+      const lightbox = mobileGalleryRoot.querySelector(`[data-mobile-lightbox][data-lightbox-index="${originalIndex}"]`);
+      if (!(lightbox instanceof HTMLDialogElement)) return;
 
       lightbox.showModal();
       document.documentElement.classList.add("mobile-lightbox-open");
     };
 
-    const closeLightbox = () => {
+    const closeLightbox = (targetLightbox) => {
+      const lightbox = targetLightbox;
       if (!(lightbox instanceof HTMLDialogElement) || !lightbox.open) return;
       lightbox.close();
       document.documentElement.classList.remove("mobile-lightbox-open");
@@ -293,14 +299,24 @@ const firstPhoto = galleryPhotos[0];
       });
     });
 
-    closeButton?.addEventListener("click", closeLightbox);
-
-    lightbox?.addEventListener("click", (event) => {
-      if (event.target === lightbox) closeLightbox();
+    closeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const index = button.getAttribute("data-lightbox-index");
+        const lightbox = mobileGalleryRoot.querySelector(`[data-mobile-lightbox][data-lightbox-index="${index}"]`);
+        closeLightbox(lightbox);
+      });
     });
 
-    lightbox?.addEventListener("close", () => {
-      document.documentElement.classList.remove("mobile-lightbox-open");
+    lightboxes.forEach((lightbox) => {
+      lightbox.addEventListener("click", (event) => {
+        if (event.target === lightbox) {
+          closeLightbox(lightbox);
+        }
+      });
+
+      lightbox.addEventListener("close", () => {
+        document.documentElement.classList.remove("mobile-lightbox-open");
+      });
     });
 
     window.addEventListener("resize", () => {
