@@ -22,9 +22,11 @@ const { header } = siteContent;
 </header>
 
 <script>
-  const header = document.querySelector("header");
-  const mobileMenuButton = document.getElementById("menu-mobile-button");
-  const mobileMenu = document.getElementById("mobile-menu");
+  import { $ } from "@/utils/dom-selector";
+
+  const $header = $("header");
+  const $mobileMenuButton = $("#menu-mobile-button");
+  const $mobileMenu = $("#mobile-menu");
 
   // Observar cambios en el atributo data-state del menú móvil
   const observer = new MutationObserver((mutations) => {
@@ -33,19 +35,19 @@ const { header } = siteContent;
         mutation.type === "attributes" &&
         mutation.attributeName === "data-state"
       ) {
-        const menuState = mobileMenu?.getAttribute("data-state");
+        const menuState = $mobileMenu?.getAttribute("data-state");
         if (menuState === "open") {
-          header?.classList.add("menu-open");
+          $header?.classList.add("menu-open");
         } else {
-          header?.classList.remove("menu-open");
+          $header?.classList.remove("menu-open");
         }
       }
     });
   });
 
   // Observar el menú móvil si existe
-  if (mobileMenu) {
-    observer.observe(mobileMenu, { attributes: true });
+  if ($mobileMenu) {
+    observer.observe($mobileMenu, { attributes: true });
   }
 </script>
 

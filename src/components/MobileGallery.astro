@@ -41,8 +41,6 @@ const firstPhoto = galleryPhotos[0];
               alt={photo.title}
               loading={index === 0 ? "eager" : "lazy"}
               fetchpriority={index === 0 ? "high" : "auto"}
-              widths={[375, 768, 1024]}
-              sizes="(max-width: 375px) 100vw, 90vw"
             />
             <span class="mobile-slide-overlay" aria-hidden="true"></span>
           </button>
@@ -130,23 +128,24 @@ const firstPhoto = galleryPhotos[0];
 
 <script>
   import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel";
+  import { $, $$ } from "@/utils/dom-selector";
 
-  const mobileGalleryRoot = document.querySelector("[data-mobile-gallery-root]");
-  const galleryPhotos = JSON.parse(mobileGalleryRoot?.getAttribute("data-gallery-photos") || "[]") as Array<{ category: string; title: string; date: string }>;
+  const $mobileGalleryRoot = $("[data-mobile-gallery-root]");
+  const galleryPhotos = JSON.parse($mobileGalleryRoot?.getAttribute("data-gallery-photos") || "[]") as Array<{ category: string; title: string; date: string }>;
 
-  if (mobileGalleryRoot instanceof HTMLElement && galleryPhotos.length > 0) {
-    const mobileViewport = mobileGalleryRoot.querySelector(".mobile-gallery-frame");
-    const mobileTrack = mobileGalleryRoot.querySelector("[data-mobile-track]");
-    const mobileSlides = Array.from(mobileGalleryRoot.querySelectorAll<HTMLElement>("[data-mobile-slide]"));
-    const mobileDots = Array.from(mobileGalleryRoot.querySelectorAll<HTMLButtonElement>("[data-mobile-dot]"));
-    const mobileNavButtons = Array.from(mobileGalleryRoot.querySelectorAll<HTMLButtonElement>("[data-mobile-nav]"));
-    const filterButtons = Array.from(mobileGalleryRoot.querySelectorAll<HTMLButtonElement>("[data-mobile-category-btn]"));
-    const categoryElement = mobileGalleryRoot.querySelector("[data-mobile-category]");
-    const titleElement = mobileGalleryRoot.querySelector("[data-mobile-title]");
-    const dateElement = mobileGalleryRoot.querySelector("[data-mobile-date]");
-    const lightboxes = Array.from(mobileGalleryRoot.querySelectorAll<HTMLDialogElement>("[data-mobile-lightbox]"));
-    const closeButtons = Array.from(mobileGalleryRoot.querySelectorAll<HTMLButtonElement>("[data-mobile-close]"));
-    const slidesByIndex = mobileSlides.reduce<Map<number, HTMLElement>>((map, slide) => {
+  if ($mobileGalleryRoot instanceof HTMLElement && galleryPhotos.length > 0) {
+    const $mobileViewport = $(".mobile-gallery-frame", $mobileGalleryRoot);
+    const $mobileTrack = $("[data-mobile-track]", $mobileGalleryRoot);
+    const $mobileSlides = Array.from($$<HTMLElement>("[data-mobile-slide]", $mobileGalleryRoot));
+    const $mobileDots = Array.from($$<HTMLButtonElement>("[data-mobile-dot]", $mobileGalleryRoot));
+    const $mobileNavButtons = Array.from($$<HTMLButtonElement>("[data-mobile-nav]", $mobileGalleryRoot));
+    const $filterButtons = Array.from($$<HTMLButtonElement>("[data-mobile-category-btn]", $mobileGalleryRoot));
+    const $categoryElement = $("[data-mobile-category]", $mobileGalleryRoot);
+    const $titleElement = $("[data-mobile-title]", $mobileGalleryRoot);
+    const $dateElement = $("[data-mobile-date]", $mobileGalleryRoot);
+    const $lightboxes = Array.from($$<HTMLDialogElement>("[data-mobile-lightbox]", $mobileGalleryRoot));
+    const $closeButtons = Array.from($$<HTMLButtonElement>("[data-mobile-close]", $mobileGalleryRoot));
+    const slidesByIndex = $mobileSlides.reduce<Map<number, HTMLElement>>((map, slide) => {
       const index = Number(slide.getAttribute("data-index"));
       if (!Number.isNaN(index)) {
         map.set(index, slide);
@@ -164,12 +163,12 @@ const firstPhoto = galleryPhotos[0];
       const photo = getPhoto(visiblePos);
       if (!photo) return;
 
-      if (categoryElement instanceof HTMLElement) categoryElement.textContent = photo.category;
-      if (titleElement instanceof HTMLElement) titleElement.textContent = photo.title;
-      if (dateElement instanceof HTMLElement) dateElement.textContent = photo.date;
+      if ($categoryElement instanceof HTMLElement) $categoryElement.textContent = photo.category;
+      if ($titleElement instanceof HTMLElement) $titleElement.textContent = photo.title;
+      if ($dateElement instanceof HTMLElement) $dateElement.textContent = photo.date;
 
       const originalIndex = visibleIndexes[visiblePos];
-      mobileDots.forEach((dot) => {
+      $mobileDots.forEach((dot) => {
         if (!(dot instanceof HTMLElement)) return;
         const dotIndex = Number(dot.dataset.index);
         dot.dataset.active = String(dotIndex === originalIndex);
@@ -199,24 +198,24 @@ const firstPhoto = galleryPhotos[0];
     };
 
     const syncTrackSlides = () => {
-      if (!(mobileTrack instanceof HTMLElement)) {
+      if (!($mobileTrack instanceof HTMLElement)) {
         return;
       }
 
-      while (mobileTrack.firstChild) {
-        mobileTrack.removeChild(mobileTrack.firstChild);
+      while ($mobileTrack.firstChild) {
+        $mobileTrack.removeChild($mobileTrack.firstChild);
       }
 
       visibleIndexes.forEach((index) => {
         const slide = slidesByIndex.get(index);
         if (slide) {
-          mobileTrack.appendChild(slide);
+          $mobileTrack.appendChild(slide);
         }
       });
     };
 
     const reInitEmbla = () => {
-      if (!(mobileViewport instanceof HTMLElement) || !(mobileTrack instanceof HTMLElement)) {
+      if (!(($mobileViewport instanceof HTMLElement) && ($mobileTrack instanceof HTMLElement))) {
         return;
       }
 
@@ -224,7 +223,7 @@ const firstPhoto = galleryPhotos[0];
         embla.destroy();
       }
 
-      embla = EmblaCarousel(mobileViewport, {
+      embla = EmblaCarousel($mobileViewport, {
         loop: visibleIndexes.length > 1,
         align: "start",
       });
@@ -240,10 +239,10 @@ const firstPhoto = galleryPhotos[0];
 
     const openLightbox = (visiblePos: number) => {
       const originalIndex = visibleIndexes[visiblePos];
-      const lightbox = mobileGalleryRoot.querySelector(`[data-mobile-lightbox][data-lightbox-index="${originalIndex}"]`);
-      if (!(lightbox instanceof HTMLDialogElement)) return;
+      const $lightbox = $<HTMLDialogElement>(`[data-mobile-lightbox][data-lightbox-index="${originalIndex}"]`, $mobileGalleryRoot);
+      if (!($lightbox instanceof HTMLDialogElement)) return;
 
-      lightbox.showModal();
+      $lightbox.showModal();
       document.documentElement.classList.add("mobile-lightbox-open");
     };
 
@@ -261,7 +260,7 @@ const firstPhoto = galleryPhotos[0];
           ? allIndexes
           : allIndexes.filter((i: number) => galleryPhotos[i].category === category);
 
-      filterButtons.forEach((btn) => {
+      $filterButtons.forEach((btn) => {
         if (!(btn instanceof HTMLElement)) return;
         const isActive = btn.getAttribute("data-mobile-category-btn") === category;
         btn.dataset.active = String(isActive);
@@ -269,13 +268,13 @@ const firstPhoto = galleryPhotos[0];
         btn.setAttribute("tabindex", isActive ? "0" : "-1");
       });
 
-      mobileSlides.forEach((slide) => {
+      $mobileSlides.forEach((slide) => {
         if (!(slide instanceof HTMLElement)) return;
         const originalIndex = Number(slide.getAttribute("data-index"));
         slide.hidden = !visibleIndexes.includes(originalIndex);
       });
 
-      mobileDots.forEach((dot) => {
+      $mobileDots.forEach((dot) => {
         if (!(dot instanceof HTMLElement)) return;
         const originalIndex = Number(dot.getAttribute("data-index"));
         dot.hidden = !visibleIndexes.includes(originalIndex);
@@ -292,15 +291,15 @@ const firstPhoto = galleryPhotos[0];
           embla = null;
         }
 
-        if (mobileTrack instanceof HTMLElement) {
-          while (mobileTrack.firstChild) {
-            mobileTrack.removeChild(mobileTrack.firstChild);
+        if ($mobileTrack instanceof HTMLElement) {
+          while ($mobileTrack.firstChild) {
+            $mobileTrack.removeChild($mobileTrack.firstChild);
           }
         }
       }
     };
 
-    mobileNavButtons.forEach((button) => {
+    $mobileNavButtons.forEach((button) => {
       button.addEventListener("click", () => {
         if (!embla) {
           return;
@@ -318,7 +317,7 @@ const firstPhoto = galleryPhotos[0];
       });
     });
 
-    mobileDots.forEach((dot) => {
+    $mobileDots.forEach((dot) => {
       dot.addEventListener("click", () => {
         const originalIndex = Number(dot.getAttribute("data-index"));
         const visiblePos = visibleIndexes.indexOf(originalIndex);
@@ -327,7 +326,7 @@ const firstPhoto = galleryPhotos[0];
       });
     });
 
-    mobileSlides.forEach((slide) => {
+    $mobileSlides.forEach((slide) => {
       slide.addEventListener("click", () => {
         const originalIndex = Number(slide.getAttribute("data-index"));
         const visiblePos = visibleIndexes.indexOf(originalIndex);
@@ -338,20 +337,20 @@ const firstPhoto = galleryPhotos[0];
       });
     });
 
-    filterButtons.forEach((button) => {
+    $filterButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const category = button.getAttribute("data-mobile-category-btn") || "Todas";
         setCategory(category);
       });
 
       button.addEventListener("keydown", (event: KeyboardEvent) => {
-        const index = filterButtons.indexOf(button);
+        const index = $filterButtons.indexOf(button);
         let targetIndex = index;
-        if (event.key === "ArrowRight") targetIndex = (index + 1) % filterButtons.length;
-        else if (event.key === "ArrowLeft") targetIndex = (index - 1 + filterButtons.length) % filterButtons.length;
+        if (event.key === "ArrowRight") targetIndex = (index + 1) % $filterButtons.length;
+        else if (event.key === "ArrowLeft") targetIndex = (index - 1 + $filterButtons.length) % $filterButtons.length;
         else return;
         event.preventDefault();
-        const next = filterButtons[targetIndex];
+        const next = $filterButtons[targetIndex];
         if (next instanceof HTMLElement) {
           const cat = next.getAttribute("data-mobile-category-btn") || "Todas";
           setCategory(cat);
@@ -360,15 +359,15 @@ const firstPhoto = galleryPhotos[0];
       });
     });
 
-    closeButtons.forEach((button) => {
+    $closeButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const index = button.getAttribute("data-lightbox-index");
-        const lightbox = mobileGalleryRoot.querySelector(`[data-mobile-lightbox][data-lightbox-index="${index}"]`);
-        closeLightbox(lightbox);
+        const $lightbox = $<HTMLDialogElement>(`[data-mobile-lightbox][data-lightbox-index="${index}"]`, $mobileGalleryRoot);
+        closeLightbox($lightbox);
       });
     });
 
-    lightboxes.forEach((lightbox) => {
+    $lightboxes.forEach((lightbox) => {
       lightbox.addEventListener("click", (event) => {
         if (event.target === lightbox) {
           closeLightbox(lightbox);

@@ -196,6 +196,8 @@ const { formspreeEndpoint, className = "" } = Astro.props;
 </style>
 
 <script>
+  import { $ } from "@/utils/dom-selector";
+
   // Extender la interfaz Window para incluir notificationBanner
   declare global {
     interface Window {
@@ -213,29 +215,28 @@ const { formspreeEndpoint, className = "" } = Astro.props;
   }
 
   document.addEventListener("DOMContentLoaded", function (): void {
-    // Usar querySelector con tipos genéricos
-    const form = document.querySelector<HTMLFormElement>("#contact-form")!;
-    const submitBtn = document.querySelector<HTMLButtonElement>("#submit-btn")!;
-    const btnText = document.querySelector<HTMLSpanElement>("#btn-text")!;
-    const btnLoading = document.querySelector<HTMLSpanElement>("#btn-loading")!;
+    const $form = $<HTMLFormElement>("#contact-form")!;
+    const $submitBtn = $<HTMLButtonElement>("#submit-btn")!;
+    const $btnText = $<HTMLSpanElement>("#btn-text")!;
+    const $btnLoading = $<HTMLSpanElement>("#btn-loading")!;
 
     function setLoadingState(loading: boolean): void {
-      submitBtn.disabled = loading;
+      $submitBtn.disabled = loading;
 
       if (loading) {
-        btnText.classList.add("hidden");
-        btnLoading.classList.remove("hidden");
+        $btnText.classList.add("hidden");
+        $btnLoading.classList.remove("hidden");
       } else {
-        btnText.classList.remove("hidden");
-        btnLoading.classList.add("hidden");
+        $btnText.classList.remove("hidden");
+        $btnLoading.classList.add("hidden");
       }
     }
 
     function clearForm(): void {
-      form.reset();
+      $form.reset();
     }
 
-    form.addEventListener(
+    $form.addEventListener(
       "submit",
       async function (e: SubmitEvent): Promise<void> {
         e.preventDefault();
@@ -243,9 +244,9 @@ const { formspreeEndpoint, className = "" } = Astro.props;
         setLoadingState(true);
 
         try {
-          const formData = new FormData(form);
+          const formData = new FormData($form);
 
-          const response: Response = await fetch(form.action, {
+          const response: Response = await fetch($form.action, {
             method: "POST",
             body: formData,
             headers: {

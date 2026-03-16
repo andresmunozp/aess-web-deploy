@@ -231,20 +231,22 @@ const finalEmoji = emoji || defaultEmojis[type];
 </style>
 
 <script>
-  window.addEventListener("DOMContentLoaded", function () {
-    const banner = document.querySelector("#notification-banner")!;
-    const closeBtn = document.querySelector("#close-notification")!;
+  import { $ } from "@/utils/dom-selector";
 
-    if (!banner || !closeBtn) return;
+  window.addEventListener("DOMContentLoaded", function () {
+    const $banner = $("#notification-banner")!;
+    const $closeBtn = $<HTMLButtonElement>("#close-notification")!;
+
+    if (!$banner || !$closeBtn) return;
 
     // Leer configuración desde data attributes
-    const autoHide = banner.getAttribute("data-auto-hide") === "true";
-    const duration = parseInt(banner.getAttribute("data-duration") || "5000");
+    const autoHide = $banner.getAttribute("data-auto-hide") === "true";
+    const duration = parseInt($banner.getAttribute("data-duration") || "5000");
 
     function showNotification() {
-      banner.classList.remove("hidden");
+      $banner.classList.remove("hidden");
       setTimeout(function () {
-        banner.classList.add("show");
+        $banner.classList.add("show");
       }, 100);
 
       // Auto-hide si está habilitado
@@ -256,18 +258,18 @@ const finalEmoji = emoji || defaultEmojis[type];
     }
 
     function hideNotification() {
-      banner.classList.remove("show");
+      $banner.classList.remove("show");
       setTimeout(function () {
-        banner.classList.add("hidden");
+        $banner.classList.add("hidden");
       }, 500);
     }
 
     // Event listeners
-    closeBtn.addEventListener("click", hideNotification);
+    $closeBtn.addEventListener("click", hideNotification);
 
     // Cerrar con Escape
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && banner.classList.contains("show")) {
+      if (e.key === "Escape" && $banner.classList.contains("show")) {
         hideNotification();
       }
     });
@@ -285,18 +287,18 @@ const finalEmoji = emoji || defaultEmojis[type];
       },
       hide: hideNotification,
       updateContent: function (props) {
-        const emoji = document.getElementById("notification-emoji");
-        const title = document.getElementById("notification-title");
-        const message = document.getElementById("notification-message");
-        const content = banner.querySelector(".notification-content");
+        const $emoji = $("#notification-emoji");
+        const $title = $("#notification-title");
+        const $message = $("#notification-message");
+        const $content = $(".notification-content", $banner);
 
-        if (props.emoji && emoji) emoji.textContent = props.emoji;
-        if (props.title && title) title.textContent = props.title;
-        if (props.message && message) message.textContent = props.message;
+        if (props.emoji && $emoji) $emoji.textContent = props.emoji;
+        if (props.title && $title) $title.textContent = props.title;
+        if (props.message && $message) $message.textContent = props.message;
 
         // Cambiar el tipo de notificación si se especifica
-        if (props.type && content) {
-          content.className = "notification-content " + props.type;
+        if (props.type && $content) {
+          $content.className = "notification-content " + props.type;
         }
       },
     };

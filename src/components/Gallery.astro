@@ -117,23 +117,24 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
 
 <script>
   import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel";
+  import { $, $$ } from "@/utils/dom-selector";
 
-  const galleryRoot = document.querySelector("[data-gallery-root]");
-  const galleryPhotos = JSON.parse(galleryRoot?.getAttribute("data-gallery-photos") || "[]") as Array<{ category: string; title: string; date: string }>;
+  const $galleryRoot = $("[data-gallery-root]");
+  const galleryPhotos = JSON.parse($galleryRoot?.getAttribute("data-gallery-photos") || "[]") as Array<{ category: string; title: string; date: string }>;
 
-  if (galleryRoot && galleryPhotos.length > 0) {
-    const mainViewport = galleryRoot.querySelector("[data-gallery-panel]");
-    const mainTrack = galleryRoot.querySelector("[data-main-track]");
-    const mainSlides = Array.from(galleryRoot.querySelectorAll<HTMLElement>("[data-main-slide]"));
-    const categoryButtons = Array.from(galleryRoot.querySelectorAll<HTMLButtonElement>("[data-category-button]"));
-    const galleryPanel = galleryRoot.querySelector("[data-gallery-panel]");
-    const thumbnailTrack = galleryRoot.querySelector("[data-thumbnail-track]");
-    const thumbnailButtons = Array.from(galleryRoot.querySelectorAll<HTMLButtonElement>("[data-thumbnail]"));
-    const controlButtons = Array.from(galleryRoot.querySelectorAll<HTMLButtonElement>("[data-action]"));
-    const emptyState = galleryRoot.querySelector("[data-empty-state]");
+  if ($galleryRoot && galleryPhotos.length > 0) {
+    const $mainViewport = $("[data-gallery-panel]", $galleryRoot);
+    const $mainTrack = $("[data-main-track]", $galleryRoot);
+    const $mainSlides = Array.from($$<HTMLElement>("[data-main-slide]", $galleryRoot));
+    const $categoryButtons = Array.from($$<HTMLButtonElement>("[data-category-button]", $galleryRoot));
+    const $galleryPanel = $("[data-gallery-panel]", $galleryRoot);
+    const $thumbnailTrack = $("[data-thumbnail-track]", $galleryRoot);
+    const $thumbnailButtons = Array.from($$<HTMLButtonElement>("[data-thumbnail]", $galleryRoot));
+    const $controlButtons = Array.from($$<HTMLButtonElement>("[data-action]", $galleryRoot));
+    const $emptyState = $("[data-empty-state]", $galleryRoot);
 
     const allIndexes = galleryPhotos.map((_, index: number) => index);
-    const slidesByIndex = mainSlides.reduce<Map<number, HTMLElement>>((map, slide) => {
+    const slidesByIndex = $mainSlides.reduce<Map<number, HTMLElement>>((map, slide) => {
       const index = Number(slide.getAttribute("data-index"));
       if (!Number.isNaN(index)) {
         map.set(index, slide);
@@ -164,11 +165,11 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
     };
 
     const updateThumbnailState = () => {
-      if (emptyState instanceof HTMLElement) {
-        emptyState.hidden = visibleIndexes.length > 0;
+      if ($emptyState instanceof HTMLElement) {
+        $emptyState.hidden = visibleIndexes.length > 0;
       }
 
-      thumbnailButtons.forEach((button) => {
+      $thumbnailButtons.forEach((button) => {
         if (!(button instanceof HTMLElement)) {
           return;
         }
@@ -184,16 +185,16 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
     };
 
     const scrollActiveThumbnailIntoView = (behavior: ScrollBehavior = "smooth") => {
-      if (!(thumbnailTrack instanceof HTMLElement)) {
+      if (!($thumbnailTrack instanceof HTMLElement)) {
         return;
       }
 
-      const activeThumbnail = thumbnailTrack.querySelector('[data-active="true"]');
-      if (!(activeThumbnail instanceof HTMLElement)) {
+      const $activeThumbnail = $("[data-active=\"true\"]", $thumbnailTrack);
+      if (!($activeThumbnail instanceof HTMLElement)) {
         return;
       }
 
-      activeThumbnail.scrollIntoView({
+      $activeThumbnail.scrollIntoView({
         behavior,
         inline: "center",
         block: "nearest",
@@ -201,24 +202,24 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
     };
 
     const syncTrackSlides = () => {
-      if (!(mainTrack instanceof HTMLElement)) {
+      if (!($mainTrack instanceof HTMLElement)) {
         return;
       }
 
-      while (mainTrack.firstChild) {
-        mainTrack.removeChild(mainTrack.firstChild);
+      while ($mainTrack.firstChild) {
+        $mainTrack.removeChild($mainTrack.firstChild);
       }
 
       visibleIndexes.forEach((index) => {
         const slide = slidesByIndex.get(index);
         if (slide) {
-          mainTrack.appendChild(slide);
+          $mainTrack.appendChild(slide);
         }
       });
     };
 
     const reInitEmbla = () => {
-      if (!(mainViewport instanceof HTMLElement) || !(mainTrack instanceof HTMLElement)) {
+      if (!($mainViewport instanceof HTMLElement) || !($mainTrack instanceof HTMLElement)) {
         return;
       }
 
@@ -226,7 +227,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
         embla.destroy();
       }
 
-      embla = EmblaCarousel(mainViewport, {
+      embla = EmblaCarousel($mainViewport, {
         loop: visibleIndexes.length > 1,
         align: "start",
       });
@@ -248,9 +249,9 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
           embla.destroy();
           embla = null;
         }
-        if (mainTrack instanceof HTMLElement) {
-          while (mainTrack.firstChild) {
-            mainTrack.removeChild(mainTrack.firstChild);
+        if ($mainTrack instanceof HTMLElement) {
+          while ($mainTrack.firstChild) {
+            $mainTrack.removeChild($mainTrack.firstChild);
           }
         }
         updateThumbnailState();
@@ -288,7 +289,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
       activeIndex = 0;
 
       let activeButtonId: string | null = null;
-      categoryButtons.forEach((button) => {
+      $categoryButtons.forEach((button) => {
         const isActive = button.getAttribute("data-category") === category;
         button.setAttribute("data-active", String(isActive));
         button.setAttribute("aria-selected", String(isActive));
@@ -299,16 +300,16 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
         }
       });
 
-      if (galleryPanel instanceof HTMLElement && activeButtonId) {
+      if ($galleryPanel instanceof HTMLElement && activeButtonId) {
         if (activeButtonId) {
-          galleryPanel.setAttribute("aria-labelledby", activeButtonId);
+          $galleryPanel.setAttribute("aria-labelledby", activeButtonId);
         }
       }
 
       renderSlides(hasHydrated);
     };
 
-    galleryRoot.addEventListener("click", (event: Event) => {
+    $galleryRoot.addEventListener("click", (event: Event) => {
       const target = event.target;
 
       if (!(target instanceof HTMLElement)) {
@@ -350,7 +351,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
       }
     });
 
-    controlButtons.forEach((button) => {
+    $controlButtons.forEach((button) => {
       button.addEventListener("keydown", (event: KeyboardEvent) => {
         if (event.key !== "Enter" && event.key !== " ") {
           return;
@@ -361,7 +362,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
       });
     });
 
-    categoryButtons.forEach((button, index) => {
+    $categoryButtons.forEach((button, index) => {
       button.addEventListener("keydown", (event: KeyboardEvent) => {
         if (!(event.currentTarget instanceof HTMLElement)) {
           return;
@@ -370,13 +371,13 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
         let targetIndex = index;
 
         if (event.key === "ArrowRight") {
-          targetIndex = normalized(index + 1, categoryButtons.length);
+          targetIndex = normalized(index + 1, $categoryButtons.length);
         } else if (event.key === "ArrowLeft") {
-          targetIndex = normalized(index - 1, categoryButtons.length);
+          targetIndex = normalized(index - 1, $categoryButtons.length);
         } else if (event.key === "Home") {
           targetIndex = 0;
         } else if (event.key === "End") {
-          targetIndex = categoryButtons.length - 1;
+          targetIndex = $categoryButtons.length - 1;
         } else if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           event.currentTarget.click();
@@ -386,7 +387,7 @@ const categories = ["Todas", ...new Set(galleryPhotos.map((photo) => photo.categ
         }
 
         event.preventDefault();
-        const nextButton = categoryButtons[targetIndex];
+        const nextButton = $categoryButtons[targetIndex];
 
         if (nextButton instanceof HTMLElement) {
           const selectedCategory = nextButton.getAttribute("data-category") || "Todas";
